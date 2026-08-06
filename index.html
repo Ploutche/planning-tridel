@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Planning Tridel</title>
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--navy:#17345f;--blue:#2667f5;--text:#1a2333;--muted:#6c7689;--line:#e2e8f0;--shadow:0 12px 30px rgba(28,49,84,.08);--green:#ddf6e8;--green-text:#17623c;--purple:#ebeaff;--purple-text:#4a4fa7;--sky:#e2f1ff;--sky-text:#245f91;--orange:#fff0d8;--orange-text:#9a5a00;--off:#f1f4f7;--off-text:#7d8796}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:var(--text)}button,select{font:inherit}.app{max-width:1120px;margin:auto;padding:16px}
+.hero{background:linear-gradient(135deg,#17345f,#24528a);color:#fff;border-radius:20px;padding:20px;box-shadow:var(--shadow);margin-bottom:14px}.hero-inner{display:flex;align-items:center;gap:14px}.logo{width:48px;height:48px;border-radius:14px;background:rgba(255,255,255,.16);display:grid;place-items:center;font-size:18px;font-weight:900}.hero h1{margin:0 0 3px;font-size:26px}.hero p{margin:0;color:#d7e4f7;font-size:14px}.hero-status{margin-left:auto;text-align:right;font-size:11px;color:#d7e4f7}.hero-status strong{display:block;color:#fff;font-size:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:17px;box-shadow:var(--shadow)}.toolbar{padding:12px;margin-bottom:14px}.field label{display:block;font-size:11px;color:var(--muted);font-weight:850;text-transform:uppercase;letter-spacing:.09em;margin:0 0 7px}.employee-select{width:100%;height:46px;border:1px solid var(--line);border-radius:12px;padding:0 12px;background:#fff;color:var(--text);font-weight:750;outline:none}.employee-select:focus{border-color:#9db9f4;box-shadow:0 0 0 3px rgba(38,103,245,.1)}
+.main-card{padding:14px}.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:#edf1f6;border-radius:12px;padding:4px;margin-bottom:12px}.tab{border:0;background:transparent;text-align:center;padding:9px;border-radius:9px;font-weight:800;color:var(--muted);cursor:pointer}.tab.active{background:#fff;color:var(--blue);box-shadow:0 3px 10px rgba(20,45,80,.08)}
+.period-nav{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:8px;margin-bottom:13px}.nav-btn{height:42px;border:1px solid var(--line);background:#fff;border-radius:11px;color:var(--blue);font-size:22px;font-weight:900;display:grid;place-items:center;cursor:pointer}.period-center{text-align:center}.period-center strong{display:block;font-size:15px}.period-center small{display:block;color:var(--muted);font-size:12px;margin-top:2px}.panel-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px}.overline{font-size:11px;color:var(--blue);font-weight:850;text-transform:uppercase;letter-spacing:.08em}.panel-top h2{margin:3px 0 0;font-size:21px}.employee-type{display:inline-flex;align-items:center;margin-top:5px;padding:4px 8px;border-radius:999px;background:#eef3f8;color:var(--muted);font-size:10px;font-weight:850}.period-pill{white-space:nowrap;background:#f5f7fa;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12px;font-weight:750}
+.week-board{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}.week-row{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}.week-day{display:flex;justify-content:space-between;align-items:center;padding:7px 8px;background:#f7f9fc;font-size:12px}.week-day span{color:var(--muted)}.week-shift{padding:10px 7px;min-height:92px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}.week-shift b{font-size:18px}.week-shift span{font-size:12px;font-weight:800;margin-top:4px}.week-shift small{font-size:10px;margin-top:4px;opacity:.8}
+.month-calendar{border:1px solid var(--line);border-radius:13px;overflow:hidden}.month-head,.month-grid{display:grid;grid-template-columns:repeat(7,1fr)}.month-head{background:#f7f9fb;border-bottom:1px solid var(--line)}.month-head span{text-align:center;padding:7px 2px;color:var(--muted);font-weight:850;font-size:11px}.month-cell{min-height:68px;padding:5px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;flex-direction:column;justify-content:space-between}.month-cell:nth-child(7n){border-right:0}.outside{background:#fafbfd}.day-num{font-size:10px;color:var(--muted)}.month-code{align-self:flex-start;padding:4px 6px;border-radius:7px;font-size:10px;font-weight:900}.empty-cell{align-self:center;color:#a3acba;font-size:10px}
+.year-help{margin:-2px 0 12px;color:var(--muted);font-size:13px}.year-calendar{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.mini-month{border:1px solid var(--line);border-radius:11px;overflow:hidden;background:#fff}.mini-month h3{margin:0;padding:8px;text-align:center;background:#f7f9fb;font-size:13px}.mini-head,.mini-grid{display:grid;grid-template-columns:repeat(7,1fr)}.mini-head span{text-align:center;padding:4px 0;color:var(--muted);font-size:8px;font-weight:850}.mini-cell{aspect-ratio:1/1;display:grid;place-items:center;font-size:7px;border-radius:3px;margin:1px}.mini-empty{background:#f6f8fa;color:#a8b0bd}
+.legend-details{margin-top:13px;border:1px solid var(--line);border-radius:12px;background:#fafbfd;overflow:hidden}.legend-summary{padding:10px 12px;cursor:pointer;color:var(--muted);font-size:12px;font-weight:850}.legend-content{padding:10px;border-top:1px solid var(--line);background:#fff}.legend{display:flex;flex-wrap:wrap;gap:7px}.legend-item{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(23,52,95,.18);padding:6px 9px;border-radius:9px;font-size:11px}.legend-code{font-weight:950}.legend-label{font-weight:750}.status-box{padding:18px;text-align:center;color:var(--muted)}.status-box.error{color:#9b2530;background:#fff3f4;border:1px solid #f2c4c8;border-radius:12px}.hidden{display:none!important}
+.code-R{background:var(--green);color:var(--green-text)}.code-RM{background:var(--purple);color:var(--purple-text)}.code-RA{background:var(--sky);color:var(--sky-text)}.code-RN{background:var(--orange);color:var(--orange-text)}.code-off{background:var(--off);color:var(--off-text)}.code-VA,.code-VJ{background:#ffdfe2;color:#8c2530}.code-HOR,.code-HSR{background:#fff8bf;color:#746300}.code-PIQ{background:#eee6fa;color:#60458c}.code-RF{background:#fff9c9;color:#c84455}.code-CA{background:#ffe8b5;color:#805600}.code-GR{background:#d9f0fa;color:#23647e}.code-EN{background:#e5f6d7;color:#3d6b28}.code-FE,.code-PO,.code-MI,.code-PI,.code-AN,.code-AP,.code-PR,.code-MS,.code-MC{background:#f5f7f9;color:#4e5968}
+@media(max-width:780px){.app{padding:11px}.hero{padding:16px;border-radius:16px}.hero h1{font-size:23px}.hero-status{display:none}.main-card{padding:11px}.panel-top h2{font-size:18px}.week-board{grid-template-columns:repeat(2,1fr)}.week-row:last-child{grid-column:1/-1}.week-shift{min-height:66px;align-items:flex-start;text-align:left;padding:8px 10px;display:grid;grid-template-columns:42px 1fr;grid-template-rows:auto auto}.week-shift b{grid-row:1/3;font-size:17px}.week-shift span{margin:0;font-size:11px}.week-shift small{margin:1px 0 0;font-size:9px}.month-cell{min-height:55px}.year-calendar{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="hero"><div class="hero-inner"><div class="logo">TR</div><div><h1>Planning Tridel</h1><p>Consultation des rotations et des réserves</p></div><div class="hero-status"><strong id="sourceStatus">Chargement…</strong><span id="updateStatus"></span></div></div></header>
+<section class="card toolbar"><div class="field"><label for="employeeSelect">Employé</label><select id="employeeSelect" class="employee-select" disabled><option>Chargement du planning…</option></select></div></section>
+<main class="card main-card">
+<div id="loading" class="status-box">Chargement du planning publié…</div>
+<div id="errorBox" class="status-box error hidden"></div>
+<div id="planningUI" class="hidden">
+<nav class="tabs"><button class="tab active" data-view="week">Semaine</button><button class="tab" data-view="month">Mois</button><button class="tab" data-view="year">Année</button></nav>
+<div class="period-nav"><button id="previousBtn" class="nav-btn" type="button">‹</button><div class="period-center"><strong id="periodTitle"></strong><small id="periodSubtitle"></small></div><button id="nextBtn" class="nav-btn" type="button">›</button></div>
+<div class="panel-top"><div><span id="viewOverline" class="overline"></span><h2 id="employeeName"></h2><span id="employeeMeta" class="employee-type"></span></div><span id="periodPill" class="period-pill"></span></div>
+<div id="viewContainer"></div>
+<details class="legend-details"><summary class="legend-summary">Légende du planning</summary><div class="legend-content"><div id="legend" class="legend"></div></div></details>
+</div>
+</main>
+</div>
+<script>
+const DATA_FILE='planning.json';
+const DAY_NAMES=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+const MONTH_NAMES=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const CODE_INFO={R:['Réserve','Selon besoin'],RM:['Matin','05:00–13:00'],RA:['Après-midi','13:00–21:00'],RN:['Nuit','21:00–05:00'],VA:['Vacances','Absence planifiée'],VJ:['Vacances','Absence planifiée'],HOR:['Horaire normal','Horaire de jour'],HSR:['Horaire spécial','Horaire de jour'],PIQ:['Piquet','Service de piquet'],RF:['Repos férié','Jour férié'],CA:['Cours / activité','Affectation'],GR:['Groupe','Affectation'],EN:['Engagement','Affectation'],FE:['Férié','Absence'],PO:['Pont','Absence'],MI:['Militaire','Absence'],PI:['Piquet','Affectation'],AN:['Ancienneté','Absence'],AP:['Accident professionnel','Absence'],PR:['Personnel','Absence'],MS:['Maladie','Absence'],MC:['Maladie / certificat','Absence']};
+let planning={year:new Date().getFullYear(),employees:[]};
+let state={view:'week',employeeId:null,date:new Date()};
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,'0');
+const isoDate=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const safeCode=v=>v==null?'':String(v).trim().toUpperCase();
+const classFor=code=>code?`code-${code.replace(/[^A-Z0-9_-]/g,'')}`:'code-off';
+function normalizeData(raw){
+  const rawEmployees=raw.employes||raw.employees||[];
+  const employees=rawEmployees.map((e,index)=>({
+    id:String(e.id||`employe-${index+1}`),
+    name:String(e.nom||e.name||`Employé ${index+1}`),
+    matricule:e.matricule==null?'':String(e.matricule),
+    team:String(e.equipe||e.team||''),
+    schedule:e.planning||e.schedule||{}
+  }));
+  if(!employees.length)throw new Error('Le fichier planning.json ne contient aucun employé.');
+  return {year:Number(raw.annee||raw.year)||new Date().getFullYear(),updatedAt:raw.mise_a_jour||raw.updatedAt||'',employees};
+}
+async function loadPlanning(){
+  try{
+    const response=await fetch(`${DATA_FILE}?v=${Date.now()}`,{cache:'no-store'});
+    if(!response.ok)throw new Error(`Le fichier ${DATA_FILE} est introuvable (${response.status}).`);
+    planning=normalizeData(await response.json());
+    initializeState();populateEmployees();showUI();render();
+  }catch(error){showError(error)}
+}
+function initializeState(){
+  const today=new Date();state.date=today;
+  const saved=localStorage.getItem('planningEmployee');
+  state.employeeId=planning.employees.some(e=>e.id===saved)?saved:planning.employees[0].id;
+}
+function populateEmployees(){
+  const select=$('employeeSelect');select.innerHTML='';
+  for(const employee of planning.employees){const option=document.createElement('option');option.value=employee.id;option.textContent=employee.matricule?`${employee.name} · ${employee.matricule}`:employee.name;select.appendChild(option)}
+  select.value=state.employeeId;select.disabled=false;
+}
+function showUI(){
+  $('loading').classList.add('hidden');$('errorBox').classList.add('hidden');$('planningUI').classList.remove('hidden');
+  $('sourceStatus').textContent='Planning publié';
+  $('updateStatus').textContent=planning.updatedAt?`Mis à jour le ${new Date(planning.updatedAt).toLocaleString('fr-CH')}`:'';
+}
+function showError(error){
+  $('loading').classList.add('hidden');$('planningUI').classList.add('hidden');$('errorBox').classList.remove('hidden');
+  $('errorBox').innerHTML=`<strong>Impossible de charger le planning.</strong><br>${error.message}<br><br>Le dépôt doit contenir <strong>index.html</strong> et <strong>planning.json</strong> dans le même dossier.`;
+  $('sourceStatus').textContent='Erreur de chargement';
+}
+function selectedEmployee(){return planning.employees.find(e=>e.id===state.employeeId)||planning.employees[0]}
+function mondayOf(date){const d=new Date(date);const day=(d.getDay()+6)%7;d.setDate(d.getDate()-day);d.setHours(0,0,0,0);return d}
+function isoWeek(date){const d=new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate()));const day=d.getUTCDay()||7;d.setUTCDate(d.getUTCDate()+4-day);const start=new Date(Date.UTC(d.getUTCFullYear(),0,1));return Math.ceil((((d-start)/86400000)+1)/7)}
+function formatRange(a,b){const opts={day:'numeric',month:'long'};if(a.getFullYear()!==b.getFullYear())return `${a.toLocaleDateString('fr-CH',{...opts,year:'numeric'})} – ${b.toLocaleDateString('fr-CH',{...opts,year:'numeric'})}`;return `${a.toLocaleDateString('fr-CH',opts)} – ${b.toLocaleDateString('fr-CH',{...opts,year:'numeric'})}`}
+function shiftDate(amount){if(state.view==='week')state.date.setDate(state.date.getDate()+7*amount);else if(state.view==='month')state.date.setMonth(state.date.getMonth()+amount,1);else state.date.setFullYear(state.date.getFullYear()+amount,0,1);render()}
+function render(){document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.view===state.view));const e=selectedEmployee();$('employeeName').textContent=e.name;$('employeeMeta').textContent=[e.team,e.matricule&&`Matricule ${e.matricule}`].filter(Boolean).join(' · ');if(state.view==='week')renderWeek(e);else if(state.view==='month')renderMonth(e);else renderYear(e);renderLegend(e)}
+function codeHTML(code){const c=safeCode(code);const info=CODE_INFO[c]||[c||'Repos',c?'Code du planning':'Aucun service'];return `<div class="week-shift ${classFor(c)}"><b>${c||'—'}</b><span>${info[0]}</span><small>${info[1]}</small></div>`}
+function renderWeek(e){const start=mondayOf(state.date),end=new Date(start);end.setDate(end.getDate()+6);$('viewOverline').textContent='Vue hebdomadaire';$('periodTitle').textContent=`Semaine ${isoWeek(start)}`;$('periodSubtitle').textContent=formatRange(start,end);$('periodPill').textContent=`S${isoWeek(start)}`;let h='<div class="week-board">';for(let i=0;i<7;i++){const d=new Date(start);d.setDate(start.getDate()+i);h+=`<div class="week-row"><div class="week-day"><strong>${DAY_NAMES[i]}</strong><span>${d.getDate()}</span></div>${codeHTML(e.schedule[isoDate(d)])}</div>`}h+='</div>';$('viewContainer').innerHTML=h}
+function renderMonth(e){const y=state.date.getFullYear(),m=state.date.getMonth();$('viewOverline').textContent='Vue mensuelle';$('periodTitle').textContent=`${MONTH_NAMES[m]} ${y}`;$('periodSubtitle').textContent='Planning du mois';$('periodPill').textContent=`${pad(m+1)}/${y}`;const first=new Date(y,m,1),start=mondayOf(first);let h='<div class="month-calendar"><div class="month-head">'+DAY_NAMES.map(d=>`<span>${d}</span>`).join('')+'</div><div class="month-grid">';for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const c=safeCode(e.schedule[isoDate(d)]);h+=`<div class="month-cell ${d.getMonth()!==m?'outside':''}"><span class="day-num">${d.getDate()}</span>${c?`<span class="month-code ${classFor(c)}">${c}</span>`:'<span class="empty-cell">—</span>'}</div>`}h+='</div></div>';$('viewContainer').innerHTML=h}
+function renderYear(e){const y=state.date.getFullYear();$('viewOverline').textContent='Vue annuelle';$('periodTitle').textContent=String(y);$('periodSubtitle').textContent='Vue générale du planning';$('periodPill').textContent=String(y);let h='<p class="year-help">Chaque couleur correspond au code prévu pour la journée.</p><div class="year-calendar">';for(let m=0;m<12;m++){const first=new Date(y,m,1),start=mondayOf(first);h+=`<div class="mini-month"><h3>${MONTH_NAMES[m]}</h3><div class="mini-head">${DAY_NAMES.map(d=>`<span>${d[0]}</span>`).join('')}</div><div class="mini-grid">`;for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const c=safeCode(e.schedule[isoDate(d)]);h+=`<span class="mini-cell ${d.getMonth()!==m?'mini-empty':classFor(c)}">${d.getMonth()===m?d.getDate():''}</span>`}h+='</div></div>'}h+='</div>';$('viewContainer').innerHTML=h}
+function renderLegend(e){const codes=[...new Set(Object.values(e.schedule).map(safeCode).filter(Boolean))].sort();$('legend').innerHTML=(codes.length?codes:['']).map(c=>{const i=CODE_INFO[c]||[c||'Repos'];return `<span class="legend-item ${classFor(c)}"><span class="legend-code">${c||'—'}</span><span class="legend-label">${i[0]}</span></span>`}).join('')}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{state.view=b.dataset.view;render()}));
+$('previousBtn').addEventListener('click',()=>shiftDate(-1));$('nextBtn').addEventListener('click',()=>shiftDate(1));
+$('employeeSelect').addEventListener('change',event=>{state.employeeId=event.target.value;localStorage.setItem('planningEmployee',state.employeeId);render()});
+loadPlanning();
+</script>
+</body>
+</html>
