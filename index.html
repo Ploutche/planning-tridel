@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Planning Tridel</title>
-<meta name="app-version" content="10.1">
+<meta name="app-version" content="10.2">
 <style>
 :root{
   --bg:#f3f6fa;--card:#fff;--navy:#17345f;--blue:#2667f5;--text:#172033;
@@ -724,6 +724,14 @@ body.view-year #statsGrid{display:grid!important}
         <div id="dayModalDate" class="day-modal-date"></div>
       </div>
 
+
+
+      <button id="dayModalClose" class="day-modal-close" type="button">×</button>
+    </div>
+    <div id="dayModalBody" class="day-modal-body"></div>
+  </div>
+</div>
+
 <script>
 const DATA_FILE='planning.json';
 const DAY_NAMES=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
@@ -1278,12 +1286,5 @@ setInterval(()=>loadPlanning(true),60000);
 
 loadPlanning(false);
 </script>
-
-      <button id="dayModalClose" class="day-modal-close" type="button">×</button>
-    </div>
-    <div id="dayModalBody" class="day-modal-body"></div>
-  </div>
-</div>
-
 </body>
 </html>
