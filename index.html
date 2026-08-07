@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Planning Tridel</title>
-<meta name="app-version" content="10.3">
+<meta name="app-version" content="10.5">
 <style>
 :root{
   --bg:#f3f6fa;--card:#fff;--navy:#17345f;--blue:#2667f5;--text:#172033;
@@ -376,7 +376,7 @@ button{cursor:pointer}
 .employee-picker-copy strong{
   display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
 }
-.employee-picker-copy small{display:block;margin-top:1px;color:var(--muted);font-size:8px}
+.employee-picker-copy small{display:none}
 .employee-picker-chevron{color:var(--blue);font-size:18px;transition:transform .16s ease}
 .employee-picker.open .employee-picker-chevron{transform:rotate(180deg)}
 .employee-picker-panel{
@@ -654,6 +654,21 @@ body.view-year #statsGrid{display:grid!important}
   background:rgba(255,255,255,.58)
 }
 
+
+/* V10.4 */
+body.view-year .stats-grid{
+  grid-template-columns:repeat(auto-fit,minmax(120px,1fr))!important;
+}
+.stat-percent{display:none!important}
+body.view-week .week-row{cursor:default!important}
+body.view-week .week-row:hover{box-shadow:none!important}
+.shift-time.fe-comment{
+  font-weight:750;
+  opacity:.92;
+  line-height:1.3;
+  max-width:100%;
+}
+
 </style>
 </head>
 <body>
@@ -682,7 +697,7 @@ body.view-year #statsGrid{display:grid!important}
               <span id="employeePickerAvatar" class="employee-picker-avatar">—</span>
               <span class="employee-picker-copy">
                 <strong id="employeePickerName">Chargement…</strong>
-                <small>Changer d’employé</small>
+                
               </span>
             </span>
             <span class="employee-picker-chevron">⌄</span>
@@ -764,8 +779,8 @@ const CODE_INFO={
   R:['Réserve','Selon besoin'],RM:['Matin','05:00–13:00'],RA:['Après-midi','13:00–21:00'],RN:['Nuit','21:00–05:00'],
   VA:['Vacances','Absence planifiée'],VJ:['Vacances','Absence planifiée'],HOR:['Horaire normal','Horaire de jour'],
   HSR:['Horaire spécial','Horaire de jour'],PIQ:['Piquet','Service de piquet'],RF:['Repos férié','Jour férié'],
-  CA:['Cours / activité','Affectation'],GR:['Groupe','Affectation'],EN:['Engagement','Affectation'],FE:['Férié','Absence'],
-  PO:['Pont','Absence'],MI:['Militaire','Absence'],PI:['Piquet','Affectation'],AN:['Ancienneté','Absence'],
+  CA:['Cours / activité','Affectation'],GR:['Groupe','Affectation'],EN:['Entretien','Affectation'],FE:['Férié','Absence'],
+  PO:['Pont','Affectation'],MI:['Militaire','Absence'],PI:['Piquet','Affectation'],AN:['Ancienneté','Absence'],
   AP:['Accident professionnel','Absence'],PR:['Personnel','Absence'],MS:['Maladie','Absence'],MC:['Maladie / certificat','Absence']
 };
 
@@ -825,25 +840,41 @@ function periodDates(){
   return dates;
 }
 
-function rotationStats(employee){
-  const counts={RM:0,RA:0,RN:0,PIQ:0};
-  for(const d of periodDates()){
-    const c=safeCode(employee.schedule[isoDate(d)]);
-    if(Object.prototype.hasOwnProperty.call(counts,c))counts[c]++;
+function annualStats(employee){
+  const counts={RM:0,RA:0,RN:0,PIQ:0,VA:0};
+  const y=state.date.getFullYear();
+  const d=new Date(y,0,1);
+
+  while(d.getFullYear()===y){
+    const code=safeCode(employee.schedule[isoDate(d)]);
+    if(Object.prototype.hasOwnProperty.call(counts,code))counts[code]++;
+    d.setDate(d.getDate()+1);
   }
   return counts;
 }
 
 function renderStats(employee){
-  const s=rotationStats(employee);
-  const total=s.RM+s.RA+s.RN;
-  const pct=value=>total>0?Math.round((value/total)*100):0;
-  $('statsGrid').innerHTML=`
-    <div class="stat-card primary"><span class="stat-label">Rotations</span><strong>${total}</strong><small>jours</small><span class="stat-percent">100 %</span></div>
-    <div class="stat-card code-RM"><span class="stat-label">RM</span><strong>${s.RM}</strong><small>jours</small><span class="stat-percent">${pct(s.RM)} %</span></div>
-    <div class="stat-card code-RA"><span class="stat-label">RA</span><strong>${s.RA}</strong><small>jours</small><span class="stat-percent">${pct(s.RA)} %</span></div>
-    <div class="stat-card code-RN"><span class="stat-label">RN</span><strong>${s.RN}</strong><small>jours</small><span class="stat-percent">${pct(s.RN)} %</span></div>
-    <div class="stat-card code-PIQ"><span class="stat-label">PIQ</span><strong>${s.PIQ}</strong><small>piquets</small></div>`;
+  const s=annualStats(employee);
+  const cards=[];
+
+  const add=(code,label,unit)=>{
+    if(s[code] <= 0)return;
+    cards.push(`
+      <div class="stat-card ${classFor(code)}">
+        <span class="stat-label">${label}</span>
+        <strong>${s[code]}</strong>
+        <small>${unit}</small>
+      </div>`);
+  };
+
+  add('RM','RM','matins');
+  add('RA','RA','après-midis');
+  add('RN','RN','nuits');
+  add('PIQ','PIQ','piquets');
+  add('VA','VA','vacances');
+
+  $('statsGrid').innerHTML=cards.join('');
+  $('statsGrid').style.display=cards.length?'':'none';
 }
 
 
@@ -877,7 +908,8 @@ function normalizeData(raw){
     .map((e,index)=>({
       id:String(e.id||`ligne-${index+1}`),
       name:cleanEmployeeName(e.nom||e.name||`Employé ${index+1}`),
-      schedule:e.planning||e.schedule||{}
+      schedule:e.planning||e.schedule||{},
+      comments:e.commentaires||e.comments||{}
     }))
     .filter(e=>e.name && !isVacantEmployee(e.name))
     .sort((a,b)=>a.name.localeCompare(b.name,'fr',{sensitivity:'base'}));
@@ -1021,6 +1053,8 @@ function openDayModal(dateObj,employee=selectedEmployee()){
   const dISO=isoDate(d);
   const code=safeCode(employee.schedule[dISO]);
   const info=CODE_INFO[code]||[code||'Repos',code?'Code du planning':'Aucun service'];
+  const feComment=code==='FE'?commentFor(employee,dISO):'';
+  const detailText=feComment||info[1];
   const mates=ROTATION_CODES.includes(code)?colleaguesFor(dISO,code,employee.id):[];
 
   $('dayModalTitle').textContent=cleanEmployeeName(employee.name);
@@ -1038,7 +1072,7 @@ function openDayModal(dateObj,employee=selectedEmployee()){
   $('dayModalBody').innerHTML=`<div class="day-detail-service ${classFor(code)}">
     <div class="day-detail-top">
       <div class="day-detail-code">${escapeHTML(code||'—')}</div>
-      <div class="day-detail-info"><strong>${escapeHTML(info[0])}</strong><small>${escapeHTML(info[1])}</small></div>
+      <div class="day-detail-info"><strong>${escapeHTML(info[0])}</strong><small>${escapeHTML(detailText)}</small></div>
     </div>${teamHTML}</div>`;
 
   $('dayModalBackdrop').classList.add('open');
@@ -1088,19 +1122,30 @@ function render(){
   attachDayClickHandlers();
 }
 
+
+function commentFor(employee,dateISO){
+  if(!employee || !employee.comments)return '';
+  return String(employee.comments[dateISO]||'').trim();
+}
+
 function codeHTML(code,dateISO,currentId){
   const c=safeCode(code);
   const info=CODE_INFO[c]||[c||'Repos',c?'Code du planning':'Aucun service'];
+  const employee=planning.employees.find(e=>e.id===currentId);
+  const feComment=c==='FE'?commentFor(employee,dateISO):'';
+  const secondary=feComment||info[1];
   const mates=colleaguesFor(dateISO,c,currentId);
+
   const teamHTML=ROTATION_CODES.includes(c)
     ? `<div class="shift-team">
          <span class="shift-team-label">Équipe</span>
          <span class="shift-team-names">${mates.length?mates.map(escapeHTML).join(', '):'Aucun collègue trouvé'}</span>
        </div>`
     : '';
+
   return `<div class="week-shift ${classFor(c)}">
     <div class="shift-mainline"><b>${escapeHTML(c||'—')}</b><span>${escapeHTML(info[0])}</span></div>
-    <div class="shift-time">${escapeHTML(info[1])}</div>
+    <div class="shift-time ${feComment?'fe-comment':''}">${escapeHTML(secondary)}</div>
     ${teamHTML}
   </div>`;
 }
@@ -1117,7 +1162,7 @@ function renderWeek(e){
   for(let i=0;i<7;i++){
     const d=new Date(start);d.setDate(start.getDate()+i);
     const isToday=isoDate(d)===todayISO();
-    const dISO=isoDate(d); h+=`<div class="week-row ${isToday?'is-current-day':''}" data-date="${dISO}"><div class="week-day ${isToday?'today':''}"><strong>${DAY_NAMES[i]}</strong><span>${d.getDate()}</span></div>${codeHTML(e.schedule[dISO],dISO,e.id)}</div>`;
+    const dISO=isoDate(d); h+=`<div class="week-row ${isToday?'is-current-day':''}"><div class="week-day ${isToday?'today':''}"><strong>${DAY_NAMES[i]}</strong><span>${d.getDate()}</span></div>${codeHTML(e.schedule[dISO],dISO,e.id)}</div>`;
   }
   h+='</div>';$('viewContainer').innerHTML=h;
 }
@@ -1133,7 +1178,7 @@ function renderMonth(e){
     const d=new Date(start);d.setDate(start.getDate()+i);
     const c=safeCode(e.schedule[isoDate(d)]);
     const isToday=isoDate(d)===todayISO();
-    const visible=codeMatchesFilter(c); h+=`<div class="month-cell ${d.getMonth()!==m?'outside':''} ${isToday?'today':''} ${visible?'':'filter-muted'}"><span class="day-num">${d.getDate()}</span>${c&&visible?`<span class="month-code ${classFor(c)}">${escapeHTML(c)}</span>`:'<span class="empty-cell">—</span>'}</div>`;
+    const visible=codeMatchesFilter(c); h+=`<div class="month-cell ${d.getMonth()!==m?'outside':''} ${isToday?'today':''} ${visible?'':'filter-muted'}" data-date="${isoDate(d)}"><span class="day-num">${d.getDate()}</span>${c&&visible?`<span class="month-code ${classFor(c)}">${escapeHTML(c)}</span>`:'<span class="empty-cell">—</span>'}</div>`;
   }
   h+='</div></div>';$('viewContainer').innerHTML=h;
 }
@@ -1151,7 +1196,7 @@ function renderYear(e){
       const d=new Date(start);d.setDate(start.getDate()+i);
       const c=safeCode(e.schedule[isoDate(d)]);
       const isToday=isoDate(d)===todayISO();
-      const visible=codeMatchesFilter(c); h+=`<span class="mini-cell ${d.getMonth()!==m?'mini-empty':(visible?classFor(c):'mini-empty')} ${isToday?'today':''}">${d.getMonth()===m?d.getDate():''}</span>`;
+      const visible=codeMatchesFilter(c); h+=`<span class="mini-cell ${d.getMonth()!==m?'mini-empty':(visible?classFor(c):'mini-empty')} ${isToday?'today':''}" data-date="${d.getMonth()===m?isoDate(d):''}">${d.getMonth()===m?d.getDate():''}</span>`;
     }
     h+='</div></div>';
   }
@@ -1196,7 +1241,7 @@ function codesForCurrentView(employee){
   if(state.view==='team'){
     const dISO=isoDate(state.date);
 
-    ['RM','RA','RN','PIQ'].forEach(code=>{
+    ['RM','RA','RN'].forEach(code=>{
       const count=planning.employees.filter(e=>safeCode(e.schedule[dISO])===code).length;
       if(count>0)found.add(code);
     });
