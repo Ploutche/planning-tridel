@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Planning Tridel</title>
-<meta name="app-version" content="11.2">
+<meta name="app-version" content="11.3">
 <style>
 :root{
   --bg:#f3f6fa;--card:#fff;--navy:#17345f;--blue:#2667f5;--text:#172033;
@@ -920,6 +920,80 @@ body.view-year .stat-card small{
   }
 }
 
+
+/* V11.3 : légende légère, sans grand rectangle blanc */
+.legend-details{
+  width:auto!important;
+  max-width:100%!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.legend-content{
+  width:auto!important;
+  max-width:100%!important;
+  margin-top:5px!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.legend{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  gap:5px!important;
+  padding:0!important;
+  background:transparent!important;
+}
+.legend-item{
+  box-shadow:none!important;
+}
+
+/* Micro-animations : uniquement visuelles, rapides */
+.main-card,
+.month-calendar,
+.year-calendar{
+  animation:planningFade .14s ease-out;
+}
+@keyframes planningFade{
+  from{opacity:.72;transform:translateY(2px)}
+  to{opacity:1;transform:none}
+}
+.tab,.nav-btn,.today-btn,.employee-picker-button,.month-cell{
+  transition:background-color .14s ease,border-color .14s ease,box-shadow .14s ease,transform .14s ease;
+}
+.nav-btn:active,.today-btn:active{transform:scale(.96)}
+
+/* Nom sélectionné un peu plus discret */
+.employee-picker-avatar{
+  width:30px!important;
+  height:30px!important;
+  flex-basis:30px!important;
+}
+.employee-picker-copy strong{
+  font-size:11px!important;
+  font-weight:800!important;
+}
+
+/* Mobile : navigation et planning plus denses sans perdre la lisibilité */
+@media(max-width:700px){
+  .tabs{gap:3px!important;padding:3px!important}
+  .tab{padding:7px 3px!important}
+  .period-nav{margin-bottom:6px!important}
+  .week-row{margin-bottom:4px!important}
+  .month-cell{min-height:42px!important}
+  .legend-summary{font-size:8px!important;padding:6px 8px!important}
+}
+
+/* Respecte les préférences d'accessibilité */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1026,7 +1100,7 @@ const DATA_FILE='planning.json';
 const DAY_NAMES=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 const MONTH_NAMES=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const CODE_INFO={
-  R:['Réserve','Selon besoin'],RM:['Matin','05:00–13:00'],RA:['Après-midi','13:00–21:00'],RN:['Nuit','21:00–05:00'],
+  R:['Réserve','Selon besoin'],RM:['Rotation matin','05:00–13:00'],RA:['Rotation après-midi','13:00–21:00'],RN:['Rotation nuit','21:00–05:00'],
   VA:['Vacances','Absence planifiée'],VJ:['Vacances','Absence planifiée'],HOR:['Horaire normal','Horaire de jour'],
   HSR:['Horaire spécial','Horaire de jour'],PIQ:['Piquet','Service de piquet'],RF:['Repos férié','Jour férié'],
   CA:['Cours / activité','Affectation'],GR:['Groupe','Affectation'],EN:['Entretien','Affectation'],FE:['Férié','Absence'],
@@ -1204,11 +1278,17 @@ function initializeState(preferredId){
 
 function populateEmployees(filter=''){
   const results=$('employeeResults');
-  const needle=filter.trim().toLocaleLowerCase('fr');
+  const query=filter.trim();
 
-  const list=planning.employees.filter(e=>
-    !needle || cleanEmployeeName(e.name).toLocaleLowerCase('fr').includes(needle)
-  );
+  let list=planning.employees.slice();
+
+  if(query){
+    list=list
+      .map(e=>({employee:e,score:fuzzyEmployeeScore(e.name,query)}))
+      .filter(x=>x.score>=0)
+      .sort((a,b)=>b.score-a.score || a.employee.name.localeCompare(b.employee.name,'fr',{sensitivity:'base'}))
+      .map(x=>x.employee);
+  }
 
   if(!list.length){
     results.innerHTML='<div class="employee-results-empty">Aucun employé trouvé</div>';
@@ -1376,9 +1456,45 @@ function commentFor(employee,dateISO){
   return String(employee.comments[dateISO]||'').trim();
 }
 
+
+function compactShiftLabel(code){
+  const c=safeCode(code);
+  if(c==='RM')return 'Matin';
+  if(c==='RA')return 'Après-midi';
+  if(c==='RN')return 'Nuit';
+  return (CODE_INFO[c]||[c||'Repos'])[0];
+}
+
+function normalizeSearchText(value){
+  return cleanEmployeeName(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-zA-Z0-9]/g,'')
+    .toLocaleLowerCase('fr');
+}
+
+function fuzzyEmployeeScore(name,query){
+  const hay=normalizeSearchText(name);
+  const needle=normalizeSearchText(query);
+  if(!needle)return 0;
+  if(hay===needle)return 1000;
+  if(hay.startsWith(needle))return 900-needle.length;
+  const direct=hay.indexOf(needle);
+  if(direct>=0)return 700-direct;
+
+  let pos=0;
+  for(const ch of needle){
+    pos=hay.indexOf(ch,pos);
+    if(pos<0)return -1;
+    pos++;
+  }
+  return 400- Math.max(0,hay.length-needle.length);
+}
+
 function codeHTML(code,dateISO,currentId){
   const c=safeCode(code);
   const info=CODE_INFO[c]||[c||'Repos',c?'Code du planning':'Aucun service'];
+  const displayLabel=compactShiftLabel(c);
   const employee=planning.employees.find(e=>e.id===currentId);
   const feComment=c==='FE'?commentFor(employee,dateISO):'';
   const secondary=feComment||info[1];
@@ -1393,7 +1509,7 @@ function codeHTML(code,dateISO,currentId){
     : `<div class="shift-team compact-team no-mates"><span class="shift-team-inline placeholder">&nbsp;</span></div>`;
 
   return `<div class="week-shift ${classFor(c)}">
-    <div class="shift-mainline"><b>${escapeHTML(c||'—')}</b><span>${escapeHTML(info[0])}</span></div>
+    <div class="shift-mainline"><b>${escapeHTML(c||'—')}</b><span>${escapeHTML(displayLabel)}</span></div>
     <div class="shift-time ${feComment?'fe-comment':''}">${escapeHTML(secondary)}</div>
     ${teamHTML}
   </div>`;
@@ -1533,14 +1649,23 @@ $('employeePickerButton').addEventListener('click',()=>{
 $('employeeSearch').addEventListener('input',event=>{
   const query=event.target.value;
   populateEmployees(query);
-  const needle=query.trim().toLocaleLowerCase('fr');
-  if(!needle)return;
-  const first=planning.employees.find(e=>cleanEmployeeName(e.name).toLocaleLowerCase('fr').includes(needle));
-  if(first && first.id!==state.employeeId){
-    state.employeeId=first.id;
-    localStorage.setItem('planningEmployee',state.employeeId);
-    updateEmployeePicker();
-    render();
+
+  if(!query.trim())return;
+
+  const ranked=planning.employees
+    .map(e=>({employee:e,score:fuzzyEmployeeScore(e.name,query)}))
+    .filter(x=>x.score>=0)
+    .sort((a,b)=>b.score-a.score);
+
+  if(ranked.length){
+    const first=ranked[0].employee;
+    if(first.id!==state.employeeId){
+      state.employeeId=first.id;
+      localStorage.setItem('planningEmployee',state.employeeId);
+      $('employeePickerName').textContent=first.name;
+      $('employeePickerAvatar').textContent=initials(first.name)||'—';
+      render();
+    }
   }
 });
 
