@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Planning Tridel</title>
-<meta name="app-version" content="11.7">
+<meta name="app-version" content="11.9">
 <style>
 :root{
   --bg:#f3f6fa;--card:#fff;--navy:#17345f;--blue:#2667f5;--text:#172033;
@@ -991,6 +991,269 @@ body.view-year .stat-card small{
     animation-duration:.01ms!important;
     animation-iteration-count:1!important;
     transition-duration:.01ms!important;
+  }
+}
+
+
+/* V11.8 — correctif responsive mobile uniquement */
+@media(max-width:700px){
+  .week-board{display:block!important}
+
+  .week-row{
+    display:grid!important;
+    grid-template-columns:72px minmax(0,1fr)!important;
+    min-height:82px!important;
+    margin-bottom:7px!important;
+    border-radius:12px!important;
+    overflow:hidden!important;
+    align-items:stretch!important;
+  }
+
+  .week-day{
+    padding:10px 9px!important;
+    border-right:1px solid var(--line)!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    align-items:flex-start!important;
+    gap:2px!important;
+    min-width:0!important;
+  }
+
+  .week-day strong{
+    font-size:12px!important;
+    line-height:1.15!important;
+  }
+
+  .week-day span{
+    font-size:11px!important;
+    line-height:1.15!important;
+  }
+
+  .week-shift{
+    min-height:82px!important;
+    padding:10px 12px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:flex-start!important;
+    justify-content:center!important;
+    text-align:left!important;
+    overflow:hidden!important;
+  }
+
+  .shift-mainline{
+    display:flex!important;
+    align-items:baseline!important;
+    justify-content:flex-start!important;
+    gap:7px!important;
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+  }
+
+  .shift-mainline b{
+    flex:0 0 auto!important;
+    font-size:18px!important;
+    line-height:1.05!important;
+  }
+
+  .shift-mainline span{
+    min-width:0!important;
+    font-size:11px!important;
+    line-height:1.15!important;
+    font-weight:850!important;
+    white-space:normal!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+  }
+
+  .shift-time{
+    width:100%!important;
+    margin-top:5px!important;
+    font-size:9px!important;
+    line-height:1.25!important;
+    text-align:left!important;
+    white-space:normal!important;
+    overflow:visible!important;
+    opacity:.72!important;
+  }
+
+  .shift-time.fe-comment{
+    font-size:9px!important;
+    line-height:1.3!important;
+    font-weight:750!important;
+  }
+
+  .shift-team,
+  .shift-team.compact-team{
+    width:100%!important;
+    min-height:auto!important;
+    margin-top:7px!important;
+    padding-top:6px!important;
+    border-top:1px dashed rgba(0,0,0,.09)!important;
+    display:block!important;
+    overflow:visible!important;
+    white-space:normal!important;
+  }
+
+  .shift-team.compact-team.no-mates{
+    display:none!important;
+  }
+
+  .shift-team-inline{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    font-size:9px!important;
+    line-height:1.35!important;
+    font-weight:750!important;
+    text-align:left!important;
+    white-space:normal!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+    opacity:.88!important;
+  }
+
+  .shift-team-inline strong{
+    font-size:8px!important;
+    font-weight:900!important;
+    text-transform:uppercase!important;
+    letter-spacing:.04em!important;
+    opacity:.7!important;
+  }
+
+  .mate-chips,.mate-chip{display:none!important}
+
+  .main-card{padding:9px!important}
+  .period-nav{margin-bottom:8px!important}
+  .employee-picker-button{min-height:44px!important}
+  .legend-details{margin-top:8px!important}
+}
+
+@media(max-width:390px){
+  .week-row{grid-template-columns:62px minmax(0,1fr)!important}
+  .week-day{padding:9px 7px!important}
+  .week-shift{padding:9px 10px!important}
+  .shift-mainline b{font-size:17px!important}
+  .shift-mainline span{font-size:10px!important}
+  .shift-team-inline{font-size:8.5px!important}
+}
+
+
+/* V11.9 — vue annuelle mobile corrigée */
+@media(max-width:700px){
+
+  /* Une seule colonne : aucun mois coupé */
+  .year-grid,
+  .year-calendar{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:10px!important;
+    width:100%!important;
+    max-width:100%!important;
+    overflow:visible!important;
+  }
+
+  .year-month{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    border-radius:12px!important;
+    overflow:hidden!important;
+  }
+
+  .year-month h3,
+  .year-month-title{
+    font-size:13px!important;
+    padding:8px 10px!important;
+    text-align:center!important;
+  }
+
+  /* 7 colonnes parfaitement contenues dans la largeur */
+  .mini-grid{
+    display:grid!important;
+    grid-template-columns:repeat(7,minmax(0,1fr))!important;
+    gap:3px!important;
+    width:100%!important;
+    padding:5px!important;
+    box-sizing:border-box!important;
+  }
+
+  .mini-head{
+    font-size:7px!important;
+    min-width:0!important;
+    text-align:center!important;
+  }
+
+  .mini-cell{
+    aspect-ratio:1 / .86!important;
+    min-width:0!important;
+    width:100%!important;
+    height:auto!important;
+    padding:0!important;
+    display:grid!important;
+    place-items:center!important;
+    font-size:8px!important;
+    border-radius:6px!important;
+    box-sizing:border-box!important;
+    overflow:hidden!important;
+  }
+
+  /* Réduit les marges autour du contenu annuel */
+  body.view-year .main-card{
+    padding-left:8px!important;
+    padding-right:8px!important;
+  }
+
+  body.view-year #viewContainer{
+    width:100%!important;
+    max-width:100%!important;
+    overflow:hidden!important;
+  }
+
+  /* Statistiques annuelles cohérentes au-dessus */
+  body.view-year .stats-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:6px!important;
+  }
+}
+
+/* iPhone Pro Max / grands mobiles : 2 colonnes uniquement si ça tient vraiment */
+@media(min-width:540px) and (max-width:700px){
+  .year-grid,
+  .year-calendar{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+  }
+
+  .mini-grid{
+    gap:2px!important;
+    padding:4px!important;
+  }
+
+  .mini-cell{
+    font-size:7px!important;
+    border-radius:5px!important;
+  }
+
+  .year-month h3,
+  .year-month-title{
+    font-size:11px!important;
+    padding:7px 8px!important;
+  }
+}
+
+/* Très petits téléphones : légèrement plus compact */
+@media(max-width:390px){
+  .mini-grid{
+    gap:2px!important;
+    padding:4px!important;
+  }
+
+  .mini-cell{
+    font-size:7px!important;
+    border-radius:5px!important;
   }
 }
 
