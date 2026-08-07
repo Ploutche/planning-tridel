@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Planning Tridel</title>
-<meta name="app-version" content="11.0">
+<meta name="app-version" content="11.1">
 <style>
 :root{
   --bg:#f3f6fa;--card:#fff;--navy:#17345f;--blue:#2667f5;--text:#172033;
@@ -817,6 +817,53 @@ body.view-year .stat-card small{
     overflow:visible
   }
   .month-code{min-width:26px;padding:4px 5px!important}
+}
+
+
+/* V11.1 : collègues plus discrets en vue semaine */
+.week-shift{
+  min-height:86px!important;
+}
+.shift-team.compact-team{
+  margin-top:6px!important;
+  padding-top:5px!important;
+  border-top:1px dashed rgba(0,0,0,.08)!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:4px!important;
+  width:100%!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+}
+.shift-team.compact-team .shift-team-label{
+  display:inline!important;
+  margin:0!important;
+  font-size:6px!important;
+  opacity:.58!important;
+  letter-spacing:.05em!important;
+  flex:0 0 auto!important;
+}
+.shift-team-inline{
+  display:block!important;
+  min-width:0!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+  font-size:7px!important;
+  font-weight:750!important;
+  opacity:.76!important;
+}
+.mate-chips,.mate-chip{display:none!important}
+
+@media(max-width:700px){
+  .week-shift{min-height:50px!important}
+  .shift-team.compact-team{
+    justify-content:flex-start!important;
+    margin-top:4px!important;
+    padding-top:3px!important;
+  }
+  .shift-team-inline{font-size:7px!important}
 }
 
 </style>
