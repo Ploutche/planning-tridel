@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Planning Tridel</title>
-<meta name="app-version" content="11.3">
+<meta name="app-version" content="11.7">
 <style>
 :root{
   --bg:#f3f6fa;--card:#fff;--navy:#17345f;--blue:#2667f5;--text:#172033;
@@ -1101,8 +1101,8 @@ const DAY_NAMES=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 const MONTH_NAMES=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const CODE_INFO={
   R:['Réserve','Selon besoin'],RM:['Rotation matin','05:00–13:00'],RA:['Rotation après-midi','13:00–21:00'],RN:['Rotation nuit','21:00–05:00'],
-  VA:['Vacances','Absence planifiée'],VJ:['Vacances','Absence planifiée'],HOR:['Horaire normal','Horaire de jour'],
-  HSR:['Horaire spécial','Horaire de jour'],PIQ:['Piquet','Service de piquet'],RF:['Repos férié','Jour férié'],
+  VA:['Vacances','Absence planifiée'],VJ:['Vacances','Absence planifiée'],HOR:['Récupération d\'heure optionnel','Absence planifiée'],
+  HSR:['Récupération d\'heure supplémentaire','Absence planifiée'],PIQ:['Piquet','Service de piquet'],RF:['Repos férié','Jour férié'],
   CA:['Cours / activité','Affectation'],GR:['Groupe','Affectation'],EN:['Entretien','Affectation'],FE:['Férié','Absence'],
   PO:['Portes','Affectation'],MI:['Militaire','Absence'],PI:['Piquet','Affectation'],AN:['Ancienneté','Absence'],
   AP:['Accident professionnel','Absence'],PR:['Personnel','Absence'],MS:['Maladie','Absence'],MC:['Maladie / certificat','Absence']
@@ -1128,7 +1128,7 @@ const LEGEND_ORDER=[
 ];
 const OFFICIAL_CODES=new Set(LEGEND_ORDER);
 
-const ABSENCE_CODES=['VA','VJ','FE','PO','MI','AN','AP','PR','MS','MC'];
+const ABSENCE_CODES=['VA','VJ','FE','HOR','HSR','MI','AN','AP','PR','MS','MC'];
 
 function codeMatchesFilter(code){return true;}
 
@@ -1553,7 +1553,7 @@ function renderYear(e){
   $('viewOverline').textContent='';
   $('periodTitle').textContent=String(y);
   $('periodSubtitle').textContent='';
-  let h='<p class="year-help">Les couleurs permettent de repérer rapidement les affectations.</p><div class="year-calendar">';
+  let h='<div class="year-calendar">';
   for(let m=0;m<12;m++){
     const first=new Date(y,m,1),start=mondayOf(first);
     h+=`<div class="mini-month"><h3>${MONTH_NAMES[m]}</h3><div class="mini-head">${DAY_NAMES.map(d=>`<span>${d[0]}</span>`).join('')}</div><div class="mini-grid">`;
