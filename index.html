@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Planning Tridel</title>
-<meta name="app-version" content="11.1">
+<meta name="app-version" content="11.2">
 <style>
 :root{
   --bg:#f3f6fa;--card:#fff;--navy:#17345f;--blue:#2667f5;--text:#172033;
@@ -866,6 +866,60 @@ body.view-year .stat-card small{
   .shift-team-inline{font-size:7px!important}
 }
 
+
+/* V11.2 : ligne collaborateurs discrète et alignement uniforme */
+.week-shift{
+  min-height:92px!important;
+  padding-bottom:7px!important;
+}
+.shift-team.compact-team{
+  margin-top:auto!important;
+  padding-top:5px!important;
+  min-height:19px!important;
+  border-top:1px dashed rgba(0,0,0,.08)!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:100%!important;
+  overflow:hidden!important;
+}
+.shift-team.compact-team.no-mates{
+  border-top-color:transparent!important;
+}
+.shift-team-inline{
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  text-align:center!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  font-size:7.5px!important;
+  font-weight:700!important;
+  line-height:1.15!important;
+  opacity:.86!important;
+}
+.shift-team-inline strong{
+  font-weight:900!important;
+  opacity:.72!important;
+}
+.shift-team-inline.placeholder{
+  visibility:hidden!important;
+}
+.mate-chips,.mate-chip,.shift-team-label{display:none!important}
+
+@media(max-width:700px){
+  .week-shift{min-height:56px!important}
+  .shift-team.compact-team{
+    min-height:17px!important;
+    justify-content:flex-start!important;
+  }
+  .shift-team-inline{
+    text-align:left!important;
+    font-size:7px!important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1330,12 +1384,13 @@ function codeHTML(code,dateISO,currentId){
   const secondary=feComment||info[1];
   const mates=colleaguesFor(dateISO,c,currentId);
 
-  const teamHTML=ROTATION_CODES.includes(c) && mates.length
-    ? `<div class="shift-team">
-         <span class="shift-team-label">Avec</span>
-         <div class="mate-chips">${mates.map(name=>`<span class="mate-chip">${escapeHTML(cleanEmployeeName(name))}</span>`).join('')}</div>
+  const teamHTML=ROTATION_CODES.includes(c)
+    ? `<div class="shift-team compact-team ${mates.length?'has-mates':'no-mates'}">
+         ${mates.length
+           ? `<span class="shift-team-inline"><strong>Avec :</strong> ${mates.map(name=>escapeHTML(cleanEmployeeName(name))).join(' · ')}</span>`
+           : `<span class="shift-team-inline placeholder">&nbsp;</span>`}
        </div>`
-    : '';
+    : `<div class="shift-team compact-team no-mates"><span class="shift-team-inline placeholder">&nbsp;</span></div>`;
 
   return `<div class="week-shift ${classFor(c)}">
     <div class="shift-mainline"><b>${escapeHTML(c||'—')}</b><span>${escapeHTML(info[0])}</span></div>
