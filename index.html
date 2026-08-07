@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Planning Tridel</title>
+<meta name="app-version" content="8.0">
 <style>
 :root{
   --bg:#f3f6fa;--card:#fff;--navy:#17345f;--blue:#2667f5;--text:#172033;
@@ -469,6 +470,84 @@ body.view-year .panel-top h2{
   body.view-year .panel-top h2{font-size:15px}
 }
 
+
+/* V6.1 : aucun badge Sxx / mois / année à droite */
+#periodPill,.period-pill{display:none!important}
+
+/* V7 - Nettoyage définitif */
+.smart-toolbar,.filter-group,.filter-btn{display:none!important}
+.period-pill,#periodPill{display:none!important}
+.overline{display:none!important}
+body.view-team .panel-top{display:none!important}
+body.view-week .stats-grid{display:none!important}
+body.view-team .stats-grid{display:none!important}
+body.view-week .panel-top,
+body.view-month .panel-top,
+body.view-year .panel-top{
+  margin-bottom:8px!important;
+}
+body.view-week .panel-top h2,
+body.view-month .panel-top h2,
+body.view-year .panel-top h2{
+  margin:0!important;
+  font-size:20px!important;
+}
+body.view-team .today-card{display:none!important}
+
+/* Équipe : aucune répétition de date ou de titre */
+body.view-team .team-date-head{
+  display:none!important;
+}
+
+/* Les infos de période ne sont montrées qu'au centre entre les flèches */
+body.view-month .period-center small,
+body.view-year .period-center small,
+body.view-team .period-center small{
+  display:none!important;
+}
+
+/* Aucun résumé/statistiques parasite sur semaine/équipe */
+body.view-week #statsGrid,
+body.view-team #statsGrid{display:none!important}
+
+@media(max-width:700px){
+  body.view-week .panel-top h2,
+  body.view-month .panel-top h2,
+  body.view-year .panel-top h2{font-size:16px!important}
+}
+
+
+/* V8 : légende contextuelle */
+.legend-details{margin-top:9px}
+.legend-summary{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 10px;font-size:10px
+}
+.legend-summary::after{
+  content:"⌄";
+  color:var(--blue);
+  font-size:14px;
+  transition:transform .16s ease
+}
+.legend-details[open] .legend-summary::after{transform:rotate(180deg)}
+.legend-content{padding:7px 8px}
+.legend{gap:5px}
+.legend-item{
+  min-height:28px;
+  padding:4px 7px!important;
+  border-radius:7px!important;
+  font-size:9px
+}
+.legend-code{min-width:22px}
+.legend-label{font-size:9px}
+@media(max-width:700px){
+  .legend-details{margin-top:7px}
+  .legend-summary{padding:7px 8px;font-size:9px}
+  .legend-content{padding:6px}
+  .legend-item{padding:3px 6px!important;font-size:8px}
+  .legend-label{font-size:8px}
+}
+
 </style>
 </head>
 <body>
@@ -550,7 +629,7 @@ body.view-year .panel-top h2{
       <div id="viewContainer"></div>
 
       <details class="legend-details">
-        <summary class="legend-summary">Légende des codes</summary>
+        <summary id="legendSummary" class="legend-summary">Afficher la légende</summary>
         <div class="legend-content"><div id="legend" class="legend"></div></div>
       </details>
     </div>
@@ -580,20 +659,26 @@ const safeCode=v=>v==null?'':String(v).trim().toUpperCase();
 const classFor=code=>code?`code-${code.replace(/[^A-Z0-9_-]/g,'')}`:'code-off';
 
 const ROTATION_CODES=['RM','RA','RN'];
+const LEGEND_ORDER=[
+  'RM','RA','RN','PIQ','R',
+  'VA','VJ',
+  'HOR','HSR',
+  'RF','FE','PO',
+  'CA','GR','EN',
+  'MI','PI','AN','AP','PR','MS','MC'
+];
+const OFFICIAL_CODES=new Set(LEGEND_ORDER);
+
 const ABSENCE_CODES=['VA','VJ','FE','PO','MI','AN','AP','PR','MS','MC'];
 
 function codeMatchesFilter(code){return true;}
-
-function initials(name){
-  return String(name).trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();
-}
 
 function colleaguesFor(dateISO,code,currentId){
   const c=safeCode(code);
   if(!ROTATION_CODES.includes(c))return [];
   return planning.employees
     .filter(e=>e.id!==currentId && safeCode(e.schedule[dateISO])===c)
-    .map(e=>e.name);
+    .map(e=>cleanEmployeeName(e.name));
 }
 
 function teamFor(dateISO,code){
@@ -665,7 +750,9 @@ function normalizeData(raw){
     }))
     .filter(e=>e.name && !isVacantEmployee(e.name))
     .sort((a,b)=>a.name.localeCompare(b.name,'fr',{sensitivity:'base'}));
+
   if(!employees.length)throw new Error('Aucun employé visible n’a été publié.');
+
   return {
     year:Number(raw.annee||raw.year)||new Date().getFullYear(),
     updatedAt:raw.mise_a_jour||raw.updatedAt||'',
@@ -701,7 +788,7 @@ function populateEmployees(filter=''){
   const needle=filter.trim().toLocaleLowerCase('fr');
 
   const list=planning.employees.filter(e=>
-    !needle || e.name.toLocaleLowerCase('fr').includes(needle)
+    !needle || cleanEmployeeName(e.name).toLocaleLowerCase('fr').includes(needle)
   );
 
   if(!list.length){
@@ -729,8 +816,8 @@ function populateEmployees(filter=''){
 
 function updateEmployeePicker(){
   const employee=selectedEmployee();
-  $('employeePickerName').textContent=employee.name;
-  $('employeePickerAvatar').textContent=initials(employee.name)||'—';
+  $('employeePickerName').textContent=cleanEmployeeName(cleanEmployeeName(employee.name));
+  $('employeePickerAvatar').textContent=initials(cleanEmployeeName(employee.name))||'—';
   populateEmployees($('employeeSearch').value);
 }
 
@@ -794,27 +881,28 @@ function goToday(){state.date=new Date();render()}
 function render(){
   document.body.classList.remove('view-week','view-month','view-year','view-team');
   document.body.classList.add(`view-${state.view}`);
-  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.view===state.view));
+
+  document.querySelectorAll('.tab').forEach(
+    b=>b.classList.toggle('active',b.dataset.view===state.view)
+  );
+
   const e=selectedEmployee();
-  $('employeeName').textContent=e.name;
+  $('employeeName').textContent=cleanEmployeeName(e.name);
+
+  $('todayCard')?.classList.remove('visible');
+  $('statsGrid').style.display=(state.view==='month'||state.view==='year')?'':'none';
 
   if(state.view==='week'){
-    $('statsGrid').style.display='none';
     renderTodayCard(e);
     renderWeek(e);
+  }else if(state.view==='month'){
+    renderStats(e);
+    renderMonth(e);
+  }else if(state.view==='year'){
+    renderStats(e);
+    renderYear(e);
   }else{
-    $('todayCard').classList.remove('visible');
-
-    if(state.view==='month' || state.view==='year'){
-      $('statsGrid').style.display='';
-      renderStats(e);
-    }else{
-      $('statsGrid').style.display='none';
-    }
-
-    if(state.view==='month')renderMonth(e);
-    else if(state.view==='year')renderYear(e);
-    else renderTeam(e);
+    renderTeam(e);
   }
 
   renderLegend(e);
@@ -878,7 +966,7 @@ function renderTodayCard(employee){
 
 function renderWeek(e){
   const start=mondayOf(state.date),end=new Date(start);end.setDate(end.getDate()+6);
-  $('viewOverline').textContent='Vue hebdomadaire';
+  $('viewOverline').textContent='';
   $('periodTitle').textContent=`Semaine ${isoWeek(start)}`;
   $('periodSubtitle').textContent=formatRange(start,end);
   let h='<div class="week-board">';
@@ -939,18 +1027,15 @@ function renderTeam(selected){
     return `<section class="team-group code-${code}">
       <h3><span>${code} · ${title}</span><span class="team-count">${people.length}</span></h3>
       ${people.length?people.map(p=>`<div class="team-person ${p.id===selected.id?'team-selected':''}">
-        <span class="team-avatar">${escapeHTML(initials(p.name))}</span>
-        <span>${escapeHTML(p.name)}</span>
+        <span class="team-avatar">${escapeHTML(initials(cleanEmployeeName(p.name)))}</span>
+        <span>${escapeHTML(cleanEmployeeName(p.name))}</span>
       </div>`).join(''):'<div class="team-empty">Personne planifiée</div>'}
     </section>`;
   };
 
   $('viewContainer').innerHTML=`<div class="team-view">
     <section class="team-date-card">
-      <div class="team-date-head">
-        <strong>Rotations</strong>
-        <span>${planning.employees.length} employés</span>
-      </div>
+      
       <div class="team-groups">
         ${groupHTML('RM','Matin')}
         ${groupHTML('RA','Après-midi')}
@@ -960,12 +1045,57 @@ function renderTeam(selected){
   </div>`;
 }
 
+
+function codesForCurrentView(employee){
+  const found=new Set();
+
+  if(state.view==='team'){
+    const dISO=isoDate(state.date);
+    for(const code of ['RM','RA','RN','PIQ']){
+      if(teamFor(dISO,code).length)found.add(code);
+    }
+  }else{
+    for(const d of periodDates()){
+      const code=safeCode(employee.schedule[isoDate(d)]);
+      if(code && OFFICIAL_CODES.has(code))found.add(code);
+    }
+  }
+
+  return LEGEND_ORDER.filter(code=>found.has(code));
+}
+
+function legendLabelFor(code){
+  const info=CODE_INFO[code];
+  if(!info)return code;
+  return info[0];
+}
+
+function updateLegendVisibility(codes){
+  const details=document.querySelector('.legend-details');
+  const summary=$('legendSummary');
+
+  if(!details || !summary)return;
+
+  if(codes.length===0){
+    details.classList.add('hidden');
+    details.removeAttribute('open');
+    return;
+  }
+
+  details.classList.remove('hidden');
+  summary.textContent='Afficher la légende';
+}
+
 function renderLegend(e){
-  const codes=[...new Set(Object.values(e.schedule).map(safeCode).filter(Boolean))].sort();
-  $('legend').innerHTML=(codes.length?codes:['']).map(c=>{
-    const i=CODE_INFO[c]||[c||'Repos'];
-    return `<span class="legend-item ${classFor(c)}"><span class="legend-code">${escapeHTML(c||'—')}</span><span class="legend-label">${escapeHTML(i[0])}</span></span>`;
-  }).join('');
+  const codes=codesForCurrentView(e);
+  updateLegendVisibility(codes);
+
+  $('legend').innerHTML=codes.map(code=>`
+    <span class="legend-item ${classFor(code)}">
+      <span class="legend-code">${escapeHTML(code)}</span>
+      <span class="legend-label">${escapeHTML(legendLabelFor(code))}</span>
+    </span>
+  `).join('');
 }
 
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{
@@ -998,6 +1128,18 @@ document.addEventListener('click',event=>{
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape')closeEmployeePicker();
 });
+
+
+const legendDetails=document.querySelector('.legend-details');
+if(legendDetails){
+  legendDetails.addEventListener('toggle',()=>{
+    if($('legendSummary')){
+      $('legendSummary').textContent=legendDetails.open
+        ? 'Masquer la légende'
+        : 'Afficher la légende';
+    }
+  });
+}
 
 /* Vérifie périodiquement les données sans recharger toute la page */
 setInterval(()=>loadPlanning(true),60000);
