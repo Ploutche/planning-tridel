@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Planning Tridel</title>
-<meta name="app-version" content="10.5">
+<meta name="app-version" content="11.0">
 <style>
 :root{
   --bg:#f3f6fa;--card:#fff;--navy:#17345f;--blue:#2667f5;--text:#172033;
@@ -669,6 +669,156 @@ body.view-week .week-row:hover{box-shadow:none!important}
   max-width:100%;
 }
 
+
+/* V11 : interface plus simple et plus professionnelle */
+
+/* Trois vues seulement */
+.tabs{grid-template-columns:repeat(3,1fr)!important}
+
+/* Cartes semaine */
+.week-shift{
+  padding:10px 8px;
+  min-height:92px;
+  justify-content:flex-start;
+}
+.shift-mainline{
+  justify-content:center;
+  align-items:center;
+  gap:5px;
+  margin-top:2px
+}
+.shift-mainline b{font-size:17px}
+.shift-mainline span{font-size:10px}
+.shift-time{
+  text-align:center;
+  width:100%;
+  margin-top:4px;
+  font-size:8px
+}
+.shift-team{
+  margin-top:auto;
+  padding-top:7px;
+  border-top:1px dashed rgba(0,0,0,.10)
+}
+.shift-team-label{
+  display:block;
+  text-align:center;
+  margin-bottom:4px;
+  font-size:7px
+}
+.mate-chips{
+  display:flex;
+  gap:4px;
+  flex-wrap:wrap;
+  justify-content:center
+}
+.mate-chip{
+  display:inline-flex;
+  align-items:center;
+  min-height:20px;
+  padding:3px 6px;
+  border-radius:999px;
+  background:rgba(255,255,255,.58);
+  border:1px solid rgba(0,0,0,.05);
+  font-size:7px;
+  font-weight:850
+}
+
+/* Contraste renforcé */
+.code-RM{background:#e3e0ff;color:#4545aa}
+.code-RA{background:#d9edff;color:#175f99}
+.code-RN{background:#ffedcf;color:#965500}
+.code-PIQ{background:#eadff8;color:#63428e}
+.code-VA,.code-VJ{background:#ffdce0;color:#982733}
+
+/* Statistiques annuelles compactes */
+body.view-year .stats-grid{
+  gap:6px;
+  margin-bottom:9px
+}
+body.view-year .stat-card{
+  padding:7px 9px;
+  min-height:58px
+}
+body.view-year .stat-card .stat-label{font-size:8px}
+body.view-year .stat-card strong{
+  display:inline-block;
+  font-size:18px;
+  margin-right:4px
+}
+body.view-year .stat-card small{
+  display:inline;
+  font-size:8px
+}
+
+/* Mois : badges plus faciles à lire */
+.month-code{
+  min-width:29px;
+  text-align:center;
+  padding:5px 7px!important;
+  font-size:9px!important;
+  border-radius:8px!important
+}
+
+/* Légende discrète */
+.legend-details{
+  width:max-content;
+  max-width:100%;
+  margin-top:8px;
+  border:0;
+  background:transparent;
+  overflow:visible
+}
+.legend-summary{
+  width:max-content;
+  max-width:100%;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:#f8fafc;
+  padding:7px 9px;
+  color:#52627a;
+  font-size:9px;
+  font-weight:850
+}
+.legend-summary::after{display:none!important}
+.legend-content{
+  margin-top:5px;
+  width:min(620px,calc(100vw - 32px));
+  border:1px solid var(--line);
+  border-radius:10px;
+  box-shadow:0 10px 28px rgba(28,49,84,.09)
+}
+
+/* Choix employé encore plus direct */
+.employee-picker-button{
+  min-height:44px
+}
+.employee-picker-copy strong{font-size:12px}
+.employee-picker-copy small{display:none!important}
+
+/* Mobile */
+@media(max-width:700px){
+  .week-row{
+    grid-template-columns:62px 1fr
+  }
+  .week-shift{
+    min-height:54px;
+    padding:7px 8px
+  }
+  .shift-mainline{
+    justify-content:flex-start
+  }
+  .shift-time{text-align:left}
+  .shift-team{margin-top:5px}
+  .mate-chips{justify-content:flex-start}
+  .mate-chip{font-size:7px;padding:2px 5px;min-height:18px}
+  body.view-year .stats-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    overflow:visible
+  }
+  .month-code{min-width:26px;padding:4px 5px!important}
+}
+
 </style>
 </head>
 <body>
@@ -720,11 +870,10 @@ body.view-week .week-row:hover{box-shadow:none!important}
     <div id="errorBox" class="status-box error hidden"></div>
 
     <div id="planningUI" class="hidden">
-      <nav class="tabs" style="grid-template-columns:repeat(4,1fr)">
+      <nav class="tabs" style="grid-template-columns:repeat(3,1fr)">
         <button class="tab active" data-view="week">Semaine</button>
         <button class="tab" data-view="month">Mois</button>
         <button class="tab" data-view="year">Année</button>
-        <button class="tab" data-view="team">Équipe</button>
       </nav>
 
       <div class="period-nav">
@@ -747,7 +896,7 @@ body.view-week .week-row:hover{box-shadow:none!important}
       <div id="viewContainer"></div>
 
       <details class="legend-details">
-        <summary id="legendSummary" class="legend-summary">Afficher la légende</summary>
+        <summary id="legendSummary" class="legend-summary">ⓘ Codes du planning</summary>
         <div class="legend-content"><div id="legend" class="legend"></div></div>
       </details>
     </div>
@@ -780,12 +929,12 @@ const CODE_INFO={
   VA:['Vacances','Absence planifiée'],VJ:['Vacances','Absence planifiée'],HOR:['Horaire normal','Horaire de jour'],
   HSR:['Horaire spécial','Horaire de jour'],PIQ:['Piquet','Service de piquet'],RF:['Repos férié','Jour férié'],
   CA:['Cours / activité','Affectation'],GR:['Groupe','Affectation'],EN:['Entretien','Affectation'],FE:['Férié','Absence'],
-  PO:['Pont','Affectation'],MI:['Militaire','Absence'],PI:['Piquet','Affectation'],AN:['Ancienneté','Absence'],
+  PO:['Portes','Affectation'],MI:['Militaire','Absence'],PI:['Piquet','Affectation'],AN:['Ancienneté','Absence'],
   AP:['Accident professionnel','Absence'],PR:['Personnel','Absence'],MS:['Maladie','Absence'],MC:['Maladie / certificat','Absence']
 };
 
 let planning={year:new Date().getFullYear(),employees:[],updatedAt:''};
-let state={view:['week','month','year','team'].includes(localStorage.getItem('planningView'))?localStorage.getItem('planningView'):'week',employeeId:null,date:new Date()};
+let state={view:['week','month','year'].includes(localStorage.getItem('planningView'))?localStorage.getItem('planningView'):'week',employeeId:null,date:new Date()};
 const $=id=>document.getElementById(id);
 const pad=n=>String(n).padStart(2,'0');
 const isoDate=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
@@ -1111,11 +1260,9 @@ function render(){
     renderWeek(e);
   }else if(state.view==='month'){
     renderMonth(e);
-  }else if(state.view==='year'){
+  }else{
     renderStats(e);
     renderYear(e);
-  }else{
-    renderTeam(e);
   }
 
   renderLegend(e);
@@ -1136,10 +1283,10 @@ function codeHTML(code,dateISO,currentId){
   const secondary=feComment||info[1];
   const mates=colleaguesFor(dateISO,c,currentId);
 
-  const teamHTML=ROTATION_CODES.includes(c)
+  const teamHTML=ROTATION_CODES.includes(c) && mates.length
     ? `<div class="shift-team">
-         <span class="shift-team-label">Équipe</span>
-         <span class="shift-team-names">${mates.length?mates.map(escapeHTML).join(', '):'Aucun collègue trouvé'}</span>
+         <span class="shift-team-label">Avec</span>
+         <div class="mate-chips">${mates.map(name=>`<span class="mate-chip">${escapeHTML(cleanEmployeeName(name))}</span>`).join('')}</div>
        </div>`
     : '';
 
@@ -1204,35 +1351,7 @@ function renderYear(e){
 }
 
 
-function renderTeam(selected){
-  const d=new Date(state.date);
-  const dISO=isoDate(d);
-  $('periodTitle').textContent=d.toLocaleDateString('fr-CH',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  $('periodSubtitle').textContent='';
-
-  const makeGroup=(code,title)=>{
-    const people=teamFor(dISO,code);
-    return `<section class="team-card-v10 ${classFor(code)}">
-      <div class="team-card-head-v10">
-        <div><strong>${code} · ${title}</strong><small>${(CODE_INFO[code]||['',''])[1]||''}</small></div>
-        <span class="team-badge-v10">${people.length}</span>
-      </div>
-      <div class="team-members-v10">
-        ${people.length?people.map(p=>`
-          <div class="team-member-v10 ${p.id===selected.id?'selected':''}">
-            <span class="team-member-avatar-v10">${escapeHTML(initials(cleanEmployeeName(p.name)))}</span>
-            <span>${escapeHTML(cleanEmployeeName(p.name))}</span>
-          </div>`).join(''):'<div class="team-empty-v10">Personne planifiée</div>'}
-      </div>
-    </section>`;
-  };
-
-  $('viewContainer').innerHTML=`<div class="team-groups-v10">
-    ${makeGroup('RM','Matin')}
-    ${makeGroup('RA','Après-midi')}
-    ${makeGroup('RN','Nuit')}
-  </div>`;
-}
+function renderTeam(selected){}
 
 
 function codesForCurrentView(employee){
@@ -1274,7 +1393,7 @@ function updateLegendVisibility(codes){
   }
 
   details.classList.remove('hidden');
-  summary.textContent='Afficher la légende';
+  summary.textContent='ⓘ Codes du planning';
 }
 
 function renderLegend(e){
