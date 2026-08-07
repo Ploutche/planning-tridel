@@ -291,6 +291,184 @@ button{cursor:pointer}
   .team-avatar{width:22px;height:22px;flex-basis:22px;font-size:7px}
 }
 
+
+/* V4 : interface simplifiée */
+.smart-toolbar,.filter-group,.filter-btn{display:none!important}
+.period-pill{display:none!important}
+
+.today-card{
+  display:none;margin:0 0 10px;border:1px solid var(--line);border-radius:12px;
+  background:linear-gradient(180deg,#fbfdff,#f6f9fd);overflow:hidden
+}
+.today-card.visible{display:block}
+.today-card-inner{
+  display:grid;grid-template-columns:auto minmax(0,1fr) minmax(180px,1fr);align-items:stretch
+}
+.today-label{
+  display:flex;flex-direction:column;justify-content:center;padding:11px 12px;
+  background:#eef4ff;border-right:1px solid #d8e4f8
+}
+.today-label span{color:#2c65ce;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
+.today-label strong{font-size:15px;margin-top:2px}
+.today-service{display:flex;align-items:center;gap:10px;padding:10px 12px}
+.today-service-code{
+  min-width:42px;height:42px;border-radius:10px;display:grid;place-items:center;
+  font-size:15px;font-weight:950
+}
+.today-service-info strong{display:block;font-size:12px}
+.today-service-info small{display:block;margin-top:2px;color:var(--muted);font-size:9px}
+.today-colleagues{
+  border-left:1px solid var(--line);padding:10px 12px;
+  display:flex;flex-direction:column;justify-content:center
+}
+.today-colleagues strong{
+  color:var(--muted);font-size:9px;text-transform:uppercase;
+  letter-spacing:.06em;margin-bottom:4px
+}
+.today-colleagues span{font-size:10px;font-weight:750;line-height:1.35}
+.today-colleagues.empty span{color:var(--muted);font-weight:600}
+
+.week-row.is-current-day{
+  box-shadow:0 0 0 2px rgba(38,103,245,.22);border-color:#a9c2f0
+}
+.week-row.is-current-day .week-day{background:#eaf2ff;color:#1f5bd7}
+.week-row.is-current-day .week-day span{color:#1f5bd7;font-weight:850}
+
+@media(max-width:700px){
+  .today-card{margin-bottom:7px;border-radius:10px}
+  .today-card-inner{grid-template-columns:66px 1fr}
+  .today-label{padding:8px 9px}
+  .today-label span{font-size:7px}
+  .today-label strong{font-size:12px}
+  .today-service{padding:7px 8px;gap:7px}
+  .today-service-code{min-width:36px;height:36px;border-radius:8px;font-size:13px}
+  .today-service-info strong{font-size:10px}
+  .today-service-info small{font-size:8px}
+  .today-colleagues{
+    grid-column:1/-1;border-left:0;border-top:1px solid var(--line);
+    padding:7px 9px;display:block
+  }
+  .today-colleagues strong{display:inline;font-size:8px;margin-right:4px}
+  .today-colleagues span{display:inline;font-size:8px}
+}
+
+
+/* V5 : choix employé et lecture simplifiés */
+.controls-grid{grid-template-columns:minmax(0,1fr) auto}
+.employee-picker{position:relative;width:100%}
+.employee-picker-button{
+  width:100%;min-height:48px;border:1px solid var(--line);border-radius:11px;
+  background:#fff;padding:6px 9px;display:flex;align-items:center;
+  justify-content:space-between;gap:10px;color:var(--text);text-align:left
+}
+.employee-picker-button:hover{border-color:#bfd0ed;background:#fcfdff}
+.employee-picker-button:focus-visible{
+  outline:none;border-color:#9db9f4;box-shadow:0 0 0 3px rgba(38,103,245,.09)
+}
+.employee-picker-main{display:flex;align-items:center;gap:9px;min-width:0}
+.employee-picker-avatar{
+  width:34px;height:34px;flex:0 0 34px;border-radius:50%;
+  display:grid;place-items:center;background:#eef3ff;color:#2a61c8;
+  font-size:10px;font-weight:900
+}
+.employee-picker-copy{display:block;min-width:0}
+.employee-picker-copy strong{
+  display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.employee-picker-copy small{display:block;margin-top:1px;color:var(--muted);font-size:8px}
+.employee-picker-chevron{color:var(--blue);font-size:18px;transition:transform .16s ease}
+.employee-picker.open .employee-picker-chevron{transform:rotate(180deg)}
+.employee-picker-panel{
+  display:none;position:absolute;z-index:100;left:0;right:0;top:calc(100% + 6px);
+  background:#fff;border:1px solid var(--line);border-radius:12px;
+  box-shadow:0 16px 38px rgba(28,49,84,.16);padding:7px
+}
+.employee-picker.open .employee-picker-panel{display:block}
+.employee-picker-search-wrap{position:relative}
+.employee-picker-search-icon{
+  position:absolute;left:10px;top:50%;transform:translateY(-50%);
+  color:#8a95a6;font-size:14px;pointer-events:none
+}
+.employee-picker-search{
+  width:100%;height:38px;border:1px solid var(--line);border-radius:9px;
+  padding:0 10px 0 30px;background:#fff;color:var(--text);outline:none;font-size:11px
+}
+.employee-picker-search:focus{border-color:#9db9f4;box-shadow:0 0 0 3px rgba(38,103,245,.08)}
+.employee-results{
+  margin-top:6px;max-height:290px;overflow:auto;display:grid;gap:2px
+}
+.employee-result{
+  width:100%;border:0;background:#fff;border-radius:8px;padding:6px 8px;
+  display:flex;align-items:center;gap:8px;color:var(--text);text-align:left
+}
+.employee-result:hover,.employee-result.active{background:#eef4ff;color:#2459bd}
+.employee-result-avatar{
+  width:28px;height:28px;flex:0 0 28px;border-radius:50%;
+  display:grid;place-items:center;background:#f0f4fb;color:#4b6287;
+  font-size:8px;font-weight:900
+}
+.employee-result.active .employee-result-avatar{background:#dfeaff;color:#2459bd}
+.employee-result-name{
+  min-width:0;font-size:11px;font-weight:750;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis
+}
+.employee-results-empty{
+  padding:13px 8px;text-align:center;color:var(--muted);font-size:10px
+}
+
+/* Affichage des affectations : priorité au code puis à l'information utile */
+.week-shift{position:relative}
+.week-shift span{font-weight:850}
+.week-shift small{opacity:.72}
+.team-mates{
+  border-top-style:dashed;
+  color:currentColor
+}
+.team-mates strong{opacity:.7;text-transform:uppercase;letter-spacing:.04em}
+.team-mates span{font-weight:750}
+
+/* La fiche aujourd'hui reste ultra directe */
+.today-service-info strong{font-weight:850}
+.today-colleagues strong{opacity:.75}
+.today-colleagues span{font-weight:750}
+
+@media(max-width:700px){
+  .controls-grid{grid-template-columns:1fr auto}
+  .employee-picker-button{min-height:41px;padding:5px 7px}
+  .employee-picker-avatar{width:30px;height:30px;flex-basis:30px;font-size:9px}
+  .employee-picker-copy strong{font-size:11px}
+  .employee-picker-copy small{font-size:7px}
+  .employee-picker-panel{position:fixed;left:8px;right:8px;top:92px;max-height:calc(100vh - 108px)}
+  .employee-results{max-height:calc(100vh - 175px)}
+  .employee-result{padding:7px}
+  .employee-result-name{font-size:10px}
+}
+@media(max-width:380px){
+  .controls-grid{grid-template-columns:1fr}
+}
+
+
+/* V6 : suppression des informations redondantes */
+body.view-team .panel-top{display:none}
+body.view-month .overline,
+body.view-year .overline{display:none}
+
+body.view-month .panel-top,
+body.view-year .panel-top{
+  margin-bottom:8px;
+}
+
+body.view-month .panel-top h2,
+body.view-year .panel-top h2{
+  margin:0;
+  font-size:18px;
+}
+
+@media(max-width:700px){
+  body.view-month .panel-top h2,
+  body.view-year .panel-top h2{font-size:15px}
+}
+
 </style>
 </head>
 <body>
@@ -312,12 +490,25 @@ button{cursor:pointer}
   <section class="card controls">
     <div class="controls-grid">
       <div class="field">
-        <label for="employeeSearch">Employé</label>
-        <div class="employee-wrap">
-          <input id="employeeSearch" class="employee-search" type="search" placeholder="Rechercher un nom…" autocomplete="off">
-          <select id="employeeSelect" class="employee-select" disabled>
-            <option>Chargement…</option>
-          </select>
+        <label>Employé</label>
+        <div id="employeePicker" class="employee-picker">
+          <button id="employeePickerButton" class="employee-picker-button" type="button" aria-expanded="false">
+            <span class="employee-picker-main">
+              <span id="employeePickerAvatar" class="employee-picker-avatar">—</span>
+              <span class="employee-picker-copy">
+                <strong id="employeePickerName">Chargement…</strong>
+                <small>Changer d’employé</small>
+              </span>
+            </span>
+            <span class="employee-picker-chevron">⌄</span>
+          </button>
+          <div id="employeePickerPanel" class="employee-picker-panel">
+            <div class="employee-picker-search-wrap">
+              <span class="employee-picker-search-icon">⌕</span>
+              <input id="employeeSearch" class="employee-picker-search" type="search" placeholder="Rechercher un employé…" autocomplete="off">
+            </div>
+            <div id="employeeResults" class="employee-results"></div>
+          </div>
         </div>
       </div>
       <button id="todayBtn" class="today-btn" type="button">Aujourd’hui</button>
@@ -344,15 +535,7 @@ button{cursor:pointer}
         </div>
         <button id="nextBtn" class="nav-btn" type="button" aria-label="Période suivante">›</button>
       </div>
-
-      <div class="smart-toolbar">
-        <div class="filter-group" aria-label="Filtres">
-          <button class="filter-btn active" data-filter="all">Tout</button>
-          <button class="filter-btn" data-filter="rotations">Rotations</button>
-          <button class="filter-btn" data-filter="piq">Piquet</button>
-          <button class="filter-btn" data-filter="absences">Absences</button>
-        </div>
-      </div>
+<div id="todayCard" class="today-card"></div>
 
       <div id="statsGrid" class="stats-grid"></div>
 
@@ -361,7 +544,7 @@ button{cursor:pointer}
           <span id="viewOverline" class="overline"></span>
           <h2 id="employeeName"></h2>
         </div>
-        <span id="periodPill" class="period-pill"></span>
+        
       </div>
 
       <div id="viewContainer"></div>
@@ -388,7 +571,7 @@ const CODE_INFO={
 };
 
 let planning={year:new Date().getFullYear(),employees:[],updatedAt:''};
-let state={view:['week','month','year','team'].includes(localStorage.getItem('planningView'))?localStorage.getItem('planningView'):'week',employeeId:null,date:new Date(),filter:['all','rotations','piq','absences'].includes(localStorage.getItem('planningFilter'))?localStorage.getItem('planningFilter'):'all'};
+let state={view:['week','month','year','team'].includes(localStorage.getItem('planningView'))?localStorage.getItem('planningView'):'week',employeeId:null,date:new Date()};
 const $=id=>document.getElementById(id);
 const pad=n=>String(n).padStart(2,'0');
 const isoDate=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
@@ -399,14 +582,7 @@ const classFor=code=>code?`code-${code.replace(/[^A-Z0-9_-]/g,'')}`:'code-off';
 const ROTATION_CODES=['RM','RA','RN'];
 const ABSENCE_CODES=['VA','VJ','FE','PO','MI','AN','AP','PR','MS','MC'];
 
-function codeMatchesFilter(code){
-  const c=safeCode(code);
-  if(state.filter==='all')return true;
-  if(state.filter==='rotations')return ROTATION_CODES.includes(c);
-  if(state.filter==='piq')return c==='PIQ';
-  if(state.filter==='absences')return ABSENCE_CODES.includes(c);
-  return true;
-}
+function codeMatchesFilter(code){return true;}
 
 function initials(name){
   return String(name).trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();
@@ -466,13 +642,29 @@ function renderStats(employee){
 }
 
 
+
+function cleanEmployeeName(name){
+  return String(name||'')
+    .replace(/\s*\([^)]*\)\s*/g,' ')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+
+function isVacantEmployee(name){
+  const clean=cleanEmployeeName(name).toLocaleLowerCase('fr');
+  return clean==='poste vacant' || clean==='poste-vacant' || clean==='vacant';
+}
+
 function normalizeData(raw){
   const rawEmployees=raw.employes||raw.employees||[];
-  const employees=rawEmployees.map((e,index)=>({
-    id:String(e.id||`ligne-${index+1}`),
-    name:String(e.nom||e.name||`Employé ${index+1}`),
-    schedule:e.planning||e.schedule||{}
-  }));
+  const employees=rawEmployees
+    .map((e,index)=>({
+      id:String(e.id||`ligne-${index+1}`),
+      name:cleanEmployeeName(e.nom||e.name||`Employé ${index+1}`),
+      schedule:e.planning||e.schedule||{}
+    }))
+    .filter(e=>e.name && !isVacantEmployee(e.name))
+    .sort((a,b)=>a.name.localeCompare(b.name,'fr',{sensitivity:'base'}));
   if(!employees.length)throw new Error('Aucun employé visible n’a été publié.');
   return {
     year:Number(raw.annee||raw.year)||new Date().getFullYear(),
@@ -490,6 +682,7 @@ async function loadPlanning(preserve=true){
     planning=next;
     initializeState(preserve ? previousId : null);
     populateEmployees();
+    updateEmployeePicker();
     showUI();
     render();
   }catch(error){showError(error)}
@@ -504,20 +697,54 @@ function initializeState(preferredId){
 }
 
 function populateEmployees(filter=''){
-  const select=$('employeeSelect');
-  const current=state.employeeId;
+  const results=$('employeeResults');
   const needle=filter.trim().toLocaleLowerCase('fr');
-  const list=planning.employees.filter(e=>!needle||e.name.toLocaleLowerCase('fr').includes(needle));
-  select.innerHTML='';
-  for(const employee of list){
-    const option=document.createElement('option');
-    option.value=employee.id;
-    option.textContent=employee.name;
-    select.appendChild(option);
+
+  const list=planning.employees.filter(e=>
+    !needle || e.name.toLocaleLowerCase('fr').includes(needle)
+  );
+
+  if(!list.length){
+    results.innerHTML='<div class="employee-results-empty">Aucun employé trouvé</div>';
+    return;
   }
-  if(list.some(e=>e.id===current))select.value=current;
-  else if(list.length)select.value=list[0].id;
-  select.disabled=!list.length;
+
+  results.innerHTML=list.map(e=>`
+    <button type="button" class="employee-result ${e.id===state.employeeId?'active':''}" data-employee-id="${escapeHTML(e.id)}">
+      <span class="employee-result-avatar">${escapeHTML(initials(e.name))}</span>
+      <span class="employee-result-name">${escapeHTML(e.name)}</span>
+    </button>
+  `).join('');
+
+  results.querySelectorAll('.employee-result').forEach(button=>{
+    button.addEventListener('click',()=>{
+      state.employeeId=button.dataset.employeeId;
+      localStorage.setItem('planningEmployee',state.employeeId);
+      updateEmployeePicker();
+      closeEmployeePicker();
+      render();
+    });
+  });
+}
+
+function updateEmployeePicker(){
+  const employee=selectedEmployee();
+  $('employeePickerName').textContent=employee.name;
+  $('employeePickerAvatar').textContent=initials(employee.name)||'—';
+  populateEmployees($('employeeSearch').value);
+}
+
+function openEmployeePicker(){
+  $('employeePicker').classList.add('open');
+  $('employeePickerButton').setAttribute('aria-expanded','true');
+  $('employeeSearch').value='';
+  populateEmployees('');
+  setTimeout(()=>$('employeeSearch').focus(),0);
+}
+
+function closeEmployeePicker(){
+  $('employeePicker').classList.remove('open');
+  $('employeePickerButton').setAttribute('aria-expanded','false');
 }
 
 function showUI(){
@@ -565,15 +792,31 @@ function shiftDate(amount){
 function goToday(){state.date=new Date();render()}
 
 function render(){
+  document.body.classList.remove('view-week','view-month','view-year','view-team');
+  document.body.classList.add(`view-${state.view}`);
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.view===state.view));
-  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.toggle('active',b.dataset.filter===state.filter));
   const e=selectedEmployee();
   $('employeeName').textContent=e.name;
-  renderStats(e);
-  if(state.view==='week')renderWeek(e);
-  else if(state.view==='month')renderMonth(e);
-  else if(state.view==='year')renderYear(e);
-  else renderTeam(e);
+
+  if(state.view==='week'){
+    $('statsGrid').style.display='none';
+    renderTodayCard(e);
+    renderWeek(e);
+  }else{
+    $('todayCard').classList.remove('visible');
+
+    if(state.view==='month' || state.view==='year'){
+      $('statsGrid').style.display='';
+      renderStats(e);
+    }else{
+      $('statsGrid').style.display='none';
+    }
+
+    if(state.view==='month')renderMonth(e);
+    else if(state.view==='year')renderYear(e);
+    else renderTeam(e);
+  }
+
   renderLegend(e);
 }
 
@@ -588,27 +831,70 @@ function codeHTML(code,dateISO,currentId){
   return `<div class="week-shift ${classFor(c)} ${matches?'':'filter-hidden-code'}"><b>${escapeHTML(c||'—')}</b><span>${escapeHTML(info[0])}</span><small>${escapeHTML(info[1])}</small>${mateHTML}</div>`;
 }
 
+
+function renderTodayCard(employee){
+  const today=new Date();
+  const weekStart=mondayOf(state.date);
+  const weekEnd=new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate()+6);
+  weekEnd.setHours(23,59,59,999);
+
+  const inDisplayedWeek=today>=weekStart && today<=weekEnd;
+  if(!inDisplayedWeek){
+    $('todayCard').classList.remove('visible');
+    return;
+  }
+
+  const dISO=isoDate(today);
+  const code=safeCode(employee.schedule[dISO]);
+  const info=CODE_INFO[code]||[code||'Repos',code?'Code du planning':'Aucun service'];
+  const mates=colleaguesFor(dISO,code,employee.id);
+
+  let colleaguesText='—';
+  if(ROTATION_CODES.includes(code)){
+    colleaguesText=mates.length?mates.map(escapeHTML).join(', '):'Aucun collègue trouvé';
+  }
+
+  $('todayCard').innerHTML=`
+    <div class="today-card-inner">
+      <div class="today-label">
+        <span>Aujourd’hui</span>
+        <strong>${escapeHTML(today.toLocaleDateString('fr-CH',{weekday:'short',day:'numeric'}))}</strong>
+      </div>
+      <div class="today-service">
+        <div class="today-service-code ${classFor(code)}">${escapeHTML(code||'—')}</div>
+        <div class="today-service-info">
+          <strong>${escapeHTML(info[0])}</strong>
+          <small>${escapeHTML(info[1])}</small>
+        </div>
+      </div>
+      <div class="today-colleagues ${ROTATION_CODES.includes(code)&&mates.length?'':'empty'}">
+        <strong>Avec</strong>
+        <span>${colleaguesText}</span>
+      </div>
+    </div>`;
+  $('todayCard').classList.add('visible');
+}
+
 function renderWeek(e){
   const start=mondayOf(state.date),end=new Date(start);end.setDate(end.getDate()+6);
   $('viewOverline').textContent='Vue hebdomadaire';
   $('periodTitle').textContent=`Semaine ${isoWeek(start)}`;
   $('periodSubtitle').textContent=formatRange(start,end);
-  $('periodPill').textContent=`S${isoWeek(start)}`;
   let h='<div class="week-board">';
   for(let i=0;i<7;i++){
     const d=new Date(start);d.setDate(start.getDate()+i);
     const isToday=isoDate(d)===todayISO();
-    const dISO=isoDate(d); h+=`<div class="week-row"><div class="week-day ${isToday?'today':''}"><strong>${DAY_NAMES[i]}</strong><span>${d.getDate()}</span></div>${codeHTML(e.schedule[dISO],dISO,e.id)}</div>`;
+    const dISO=isoDate(d); h+=`<div class="week-row ${isToday?'is-current-day':''}"><div class="week-day ${isToday?'today':''}"><strong>${DAY_NAMES[i]}</strong><span>${d.getDate()}</span></div>${codeHTML(e.schedule[dISO],dISO,e.id)}</div>`;
   }
   h+='</div>';$('viewContainer').innerHTML=h;
 }
 
 function renderMonth(e){
   const y=state.date.getFullYear(),m=state.date.getMonth();
-  $('viewOverline').textContent='Vue mensuelle';
+  $('viewOverline').textContent='';
   $('periodTitle').textContent=`${MONTH_NAMES[m]} ${y}`;
-  $('periodSubtitle').textContent='Planning du mois';
-  $('periodPill').textContent=`${pad(m+1)}/${y}`;
+  $('periodSubtitle').textContent='';
   const first=new Date(y,m,1),start=mondayOf(first);
   let h='<div class="month-calendar"><div class="month-head">'+DAY_NAMES.map(d=>`<span>${d}</span>`).join('')+'</div><div class="month-grid">';
   for(let i=0;i<42;i++){
@@ -622,10 +908,9 @@ function renderMonth(e){
 
 function renderYear(e){
   const y=state.date.getFullYear();
-  $('viewOverline').textContent='Vue annuelle';
+  $('viewOverline').textContent='';
   $('periodTitle').textContent=String(y);
-  $('periodSubtitle').textContent='Vue générale';
-  $('periodPill').textContent=String(y);
+  $('periodSubtitle').textContent='';
   let h='<p class="year-help">Les couleurs permettent de repérer rapidement les affectations.</p><div class="year-calendar">';
   for(let m=0;m<12;m++){
     const first=new Date(y,m,1),start=mondayOf(first);
@@ -645,10 +930,9 @@ function renderYear(e){
 function renderTeam(selected){
   const d=new Date(state.date);
   const dISO=isoDate(d);
-  $('viewOverline').textContent='Équipe du jour';
-  $('periodTitle').textContent=d.toLocaleDateString('fr-CH',{weekday:'long',day:'numeric',month:'long'});
-  $('periodSubtitle').textContent=String(d.getFullYear());
-  $('periodPill').textContent=d.toLocaleDateString('fr-CH',{day:'2-digit',month:'2-digit'});
+  $('viewOverline').textContent='';
+  $('periodTitle').textContent=d.toLocaleDateString('fr-CH',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  $('periodSubtitle').textContent='';
 
   const groupHTML=(code,title)=>{
     const people=teamFor(dISO,code);
@@ -664,8 +948,8 @@ function renderTeam(selected){
   $('viewContainer').innerHTML=`<div class="team-view">
     <section class="team-date-card">
       <div class="team-date-head">
-        <strong>${escapeHTML(d.toLocaleDateString('fr-CH',{weekday:'long',day:'numeric',month:'long',year:'numeric'}))}</strong>
-        <span>${planning.employees.length} employés publiés</span>
+        <strong>Rotations</strong>
+        <span>${planning.employees.length} employés</span>
       </div>
       <div class="team-groups">
         ${groupHTML('RM','Matin')}
@@ -693,27 +977,27 @@ $('previousBtn').addEventListener('click',()=>shiftDate(-1));
 $('nextBtn').addEventListener('click',()=>shiftDate(1));
 $('todayBtn').addEventListener('click',goToday);
 
-$('employeeSelect').addEventListener('change',event=>{
-  state.employeeId=event.target.value;
-  localStorage.setItem('planningEmployee',state.employeeId);
-  render();
+
+
+
+
+
+$('employeePickerButton').addEventListener('click',()=>{
+  if($('employeePicker').classList.contains('open'))closeEmployeePicker();
+  else openEmployeePicker();
 });
 
 $('employeeSearch').addEventListener('input',event=>{
   populateEmployees(event.target.value);
-  const select=$('employeeSelect');
-  if(!select.disabled && select.value){
-    state.employeeId=select.value;
-    render();
-  }
 });
 
+document.addEventListener('click',event=>{
+  if(!$('employeePicker').contains(event.target))closeEmployeePicker();
+});
 
-document.querySelectorAll('.filter-btn').forEach(b=>b.addEventListener('click',()=>{
-  state.filter=b.dataset.filter;
-  localStorage.setItem('planningFilter',state.filter);
-  render();
-}));
+document.addEventListener('keydown',event=>{
+  if(event.key==='Escape')closeEmployeePicker();
+});
 
 /* Vérifie périodiquement les données sans recharger toute la page */
 setInterval(()=>loadPlanning(true),60000);
