@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Planning Tridel</title>
-<meta name="app-version" content="8.0">
+<meta name="app-version" content="8.1">
 <style>
 :root{
   --bg:#f3f6fa;--card:#fff;--navy:#17345f;--blue:#2667f5;--text:#172033;
@@ -733,6 +733,17 @@ function cleanEmployeeName(name){
     .replace(/\s*\([^)]*\)\s*/g,' ')
     .replace(/\s+/g,' ')
     .trim();
+}
+
+
+function initials(name){
+  return cleanEmployeeName(name)
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0,2)
+    .map(part=>part.charAt(0))
+    .join('')
+    .toUpperCase();
 }
 
 function isVacantEmployee(name){
