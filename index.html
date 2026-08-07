@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Planning Tridel</title>
-<meta name="app-version" content="10.2">
+<meta name="app-version" content="10.3">
 <style>
 :root{
   --bg:#f3f6fa;--card:#fff;--navy:#17345f;--blue:#2667f5;--text:#172033;
@@ -622,6 +622,38 @@ body.view-year #statsGrid{display:grid!important}
   .day-modal{width:100%;max-height:82vh;border-radius:17px 17px 12px 12px}
 }
 
+
+/* V10.3 : ajustements demandés */
+.quick-nav,.quick-nav-btn{display:none!important}
+.update-chip #sourceStatus:empty{display:none}
+
+/* Restaure les couleurs de la vue Équipe */
+.team-card-v10.code-RM{
+  background:var(--purple);
+  color:var(--purple-text);
+  border-color:rgba(74,79,167,.18)
+}
+.team-card-v10.code-RA{
+  background:var(--sky);
+  color:var(--sky-text);
+  border-color:rgba(36,95,145,.18)
+}
+.team-card-v10.code-RN{
+  background:var(--orange);
+  color:var(--orange-text);
+  border-color:rgba(154,90,0,.18)
+}
+.team-card-v10.code-RM .team-card-head-v10,
+.team-card-v10.code-RA .team-card-head-v10,
+.team-card-v10.code-RN .team-card-head-v10{
+  background:rgba(255,255,255,.18);
+  border-bottom-color:rgba(0,0,0,.08)
+}
+.team-card-v10 .team-member-avatar-v10,
+.team-card-v10 .team-badge-v10{
+  background:rgba(255,255,255,.58)
+}
+
 </style>
 </head>
 <body>
@@ -689,15 +721,7 @@ body.view-year #statsGrid{display:grid!important}
         <button id="nextBtn" class="nav-btn" type="button" aria-label="Période suivante">›</button>
       </div>
 <div id="statsGrid" class="stats-grid"></div>
-
-      <div class="quick-nav">
-        <button class="quick-nav-btn" type="button" data-quick="today">Aujourd’hui</button>
-        <button class="quick-nav-btn" type="button" data-quick="week">Cette semaine</button>
-        <button class="quick-nav-btn" type="button" data-quick="month">Ce mois</button>
-        <button class="quick-nav-btn" type="button" data-quick="year">Cette année</button>
-      </div>
-
-      <div class="panel-top">
+<div class="panel-top">
         <div>
           <span id="viewOverline" class="overline"></span>
           <h2 id="employeeName"></h2>
@@ -860,6 +884,11 @@ function normalizeData(raw){
 
   if(!employees.length)throw new Error('Aucun employé visible n’a été publié.');
 
+  const employeesWithSchedule=employees.filter(e=>e.schedule && typeof e.schedule==='object');
+  if(employeesWithSchedule.length!==employees.length){
+    throw new Error('Le fichier planning.json contient au moins un planning employé invalide.');
+  }
+
   return {
     year:Number(raw.annee||raw.year)||new Date().getFullYear(),
     updatedAt:raw.mise_a_jour||raw.updatedAt||'',
@@ -883,6 +912,7 @@ async function loadPlanning(preserve=true){
 }
 
 function initializeState(preferredId){
+  state.date=new Date();
   state.employeeId=planning.employees.some(e=>e.id===preferredId)
     ? preferredId
     : planning.employees.some(e=>e.id===localStorage.getItem('planningEmployee'))
@@ -945,7 +975,7 @@ function showUI(){
   $('loading').classList.add('hidden');
   $('errorBox').classList.add('hidden');
   $('planningUI').classList.remove('hidden');
-  $('sourceStatus').textContent='Planning à jour';
+  $('sourceStatus').textContent='';
 
   if(planning.updatedAt){
     const d=new Date(planning.updatedAt);
@@ -1216,6 +1246,7 @@ function renderLegend(e){
 
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{
   state.view=b.dataset.view;
+  state.date=new Date();
   localStorage.setItem('planningView',state.view);
   render();
 }));
@@ -1268,18 +1299,6 @@ if(legendDetails){
 }
 
 
-document.querySelectorAll('.quick-nav-btn').forEach(button=>{
-  button.addEventListener('click',()=>{
-    const now=new Date();
-    const quick=button.dataset.quick;
-    if(quick==='today'){ state.date=now; }
-    if(quick==='week'){ state.date=now; state.view='week'; }
-    if(quick==='month'){ state.date=new Date(now.getFullYear(),now.getMonth(),1); state.view='month'; }
-    if(quick==='year'){ state.date=new Date(now.getFullYear(),0,1); state.view='year'; }
-    localStorage.setItem('planningView',state.view);
-    render();
-  });
-});
 
 /* Vérifie périodiquement les données sans recharger toute la page */
 setInterval(()=>loadPlanning(true),60000);
