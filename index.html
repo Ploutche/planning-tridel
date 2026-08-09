@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Planning Tridel</title>
-<meta name="app-version" content="12.3">
+<meta name="app-version" content="12.4">
 <style>
 :root{
   --bg:#f3f6fa;--card:#fff;--navy:#17345f;--blue:#2667f5;--text:#172033;
@@ -1488,7 +1488,7 @@ const CODE_INFO={
   R:['Réserve','Selon besoin'],RM:['Rotation matin','05:00–13:00'],RA:['Rotation après-midi','13:00–21:00'],RN:['Rotation nuit','21:00–05:00'],
   VA:['Vacances','Absence planifiée'],VJ:['Vacances','Absence planifiée'],HOR:['Récupération d\'heure optionnel','Absence planifiée'],
   HSR:['Récupération d\'heure supplémentaire','Absence planifiée'],PIQ:['Piquet','Service de piquet'],RF:['Repos férié','Jour férié'],
-  CA:['Cours / activité','Affectation'],GR:['Groupe','Affectation'],EN:['Entretien','Affectation'],FE:['Férié','Absence'],
+  CA:['Cours / activité','Affectation'],GR:['Groupe','Affectation'],EN:['Entretien','Affectation'],FE:['Formation externe','Formation'],
   PO:['Portes','Affectation'],MI:['Militaire','Absence'],PI:['Reprise de piquet','Absence planifiée'],PC:['Protection civile','Absence planifiée'],EM:['Enfant malade','Absence planifiée'],AN:['Ancienneté','Absence'],
   AP:['Accident professionnel','Absence'],PR:['Personnel','Absence'],MS:['Maladie','Absence'],MC:['Maladie / certificat','Absence']
 };
@@ -1767,6 +1767,7 @@ function commentCategory(text){
 function buildUpcomingEvents(employee){
   const start=new Date();
   start.setHours(0,0,0,0);
+
   const end=new Date(start);
   end.setDate(end.getDate()+29);
 
@@ -1781,17 +1782,20 @@ function buildUpcomingEvents(employee){
   };
 
   const isVacationCode=code=>code==='VA' || code==='VJ';
-  const isWeekend=date=>{
-    const day=date.getDay();
-    return day===0 || day===6;
+
+  // Jours qui peuvent relier deux blocs de vacances :
+  // cellule vide / repos explicite.
+  const isVacationBridgeCode=code=>{
+    const c=safeCode(code);
+    return c==='' || c==='R';
   };
 
-  // Vacances : regrouper VA/VJ consécutifs ET les périodes séparées uniquement par un week-end
+  // VACANCES
+  // Fusionne les périodes quand les jours intermédiaires sont uniquement des repos / cellules vides.
   let cursor=new Date(start);
 
   while(cursor<=end){
-    const cursorISO=isoDate(cursor);
-    const code=safeCode(employee.schedule[cursorISO]);
+    const code=safeCode(employee.schedule[isoDate(cursor)]);
 
     if(isVacationCode(code)){
       const vacStart=new Date(cursor);
@@ -1803,26 +1807,26 @@ function buildUpcomingEvents(employee){
       while(probe<=end){
         const probeCode=safeCode(employee.schedule[isoDate(probe)]);
 
+        // Vacances qui se poursuivent normalement
         if(isVacationCode(probeCode)){
           vacEnd=new Date(probe);
           probe.setDate(probe.getDate()+1);
           continue;
         }
 
-        if(isWeekend(probe)){
-          let weekendProbe=new Date(probe);
+        // Trouver le prochain jour non-repos
+        if(isVacationBridgeCode(probeCode)){
+          let bridgeEnd=new Date(probe);
 
-          while(weekendProbe<=end && isWeekend(weekendProbe)){
-            weekendProbe.setDate(weekendProbe.getDate()+1);
+          while(bridgeEnd<=end && isVacationBridgeCode(employee.schedule[isoDate(bridgeEnd)])){
+            bridgeEnd.setDate(bridgeEnd.getDate()+1);
           }
 
-          const afterWeekendCode=weekendProbe<=end
-            ? safeCode(employee.schedule[isoDate(weekendProbe)])
-            : '';
-
-          if(isVacationCode(afterWeekendCode)){
-            vacEnd=new Date(weekendProbe);
-            probe=new Date(weekendProbe);
+          // Si après les jours de repos les vacances reprennent,
+          // on considère que c'est une seule période.
+          if(bridgeEnd<=end && isVacationCode(safeCode(employee.schedule[isoDate(bridgeEnd)]))){
+            vacEnd=new Date(bridgeEnd);
+            probe=new Date(bridgeEnd);
             probe.setDate(probe.getDate()+1);
             continue;
           }
@@ -1850,13 +1854,11 @@ function buildUpcomingEvents(employee){
     cursor.setDate(cursor.getDate()+1);
   }
 
-  // Piquet : regrouper les jours PIQ consécutifs.
-  // Si le piquet est réparti autour d'un week-end, le week-end est intégré à la période.
+  // PIQUET : jours PIQ consécutifs, avec pont possible sur repos / cellules vides.
   cursor=new Date(start);
 
   while(cursor<=end){
-    const cursorISO=isoDate(cursor);
-    const code=safeCode(employee.schedule[cursorISO]);
+    const code=safeCode(employee.schedule[isoDate(cursor)]);
 
     if(code==='PIQ'){
       const piqStart=new Date(cursor);
@@ -1874,20 +1876,16 @@ function buildUpcomingEvents(employee){
           continue;
         }
 
-        if(isWeekend(probe)){
-          let weekendProbe=new Date(probe);
+        if(isVacationBridgeCode(probeCode)){
+          let bridgeEnd=new Date(probe);
 
-          while(weekendProbe<=end && isWeekend(weekendProbe)){
-            weekendProbe.setDate(weekendProbe.getDate()+1);
+          while(bridgeEnd<=end && isVacationBridgeCode(employee.schedule[isoDate(bridgeEnd)])){
+            bridgeEnd.setDate(bridgeEnd.getDate()+1);
           }
 
-          const afterWeekendCode=weekendProbe<=end
-            ? safeCode(employee.schedule[isoDate(weekendProbe)])
-            : '';
-
-          if(afterWeekendCode==='PIQ'){
-            piqEnd=new Date(weekendProbe);
-            probe=new Date(weekendProbe);
+          if(bridgeEnd<=end && safeCode(employee.schedule[isoDate(bridgeEnd)])==='PIQ'){
+            piqEnd=new Date(bridgeEnd);
+            probe=new Date(bridgeEnd);
             probe.setDate(probe.getDate()+1);
             continue;
           }
@@ -1913,48 +1911,60 @@ function buildUpcomingEvents(employee){
     cursor.setDate(cursor.getDate()+1);
   }
 
-  // Formation externe : tout code FE est un événement, même sans commentaire.
-  let d=new Date(start);
-  while(d<=end){
-    const dateISO=isoDate(d);
+  // FORMATION EXTERNE : tout code FE est un événement.
+  let day=new Date(start);
+
+  while(day<=end){
+    const dateISO=isoDate(day);
     const code=safeCode(employee.schedule[dateISO]);
 
     if(code==='FE'){
-      const rawComment=String(comments[dateISO]||'').trim();
+      const comment=String(comments[dateISO]||'').trim();
 
       pushUnique({
         type:'training',
-        date:new Date(d),
-        title:`Formation externe — ${formatLongDate(d)}`,
-        detail:rawComment || 'Formation externe'
-      },`training-${dateISO}`);
+        date:new Date(day),
+        title:`Formation externe — ${formatLongDate(day)}`,
+        detail:comment || 'Formation externe'
+      },`formation-${dateISO}`);
     }
 
-    d.setDate(d.getDate()+1);
+    day.setDate(day.getDate()+1);
   }
 
-  // Commentaires importants : formation / médecin du travail
+  // COMMENTAIRES IMPORTANTS
   Object.entries(comments).forEach(([dateISO,rawText])=>{
     const text=String(rawText||'').trim();
     if(!text)return;
 
     const eventDate=parseLocalISO(dateISO);
     eventDate.setHours(0,0,0,0);
+
     if(eventDate<start || eventDate>end)return;
 
-    const category=commentCategory(text);
+    const normalized=text
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g,'')
+      .toLocaleLowerCase('fr');
 
-    if(category==='training'){
+    const hasFormation=normalized.includes('formation');
+    const hasMedical=
+      normalized.includes('medecin du travail') ||
+      normalized.includes('medecin travail');
+
+    if(hasFormation){
       pushUnique({
         type:'training',
-        date:eventDate,
+        date:new Date(eventDate),
         title:`Formation — ${formatLongDate(eventDate)}`,
         detail:text
-      },`training-${dateISO}`);
-    }else if(category==='medical'){
+      },`formation-${dateISO}`);
+    }
+
+    if(hasMedical){
       pushUnique({
         type:'medical',
-        date:eventDate,
+        date:new Date(eventDate),
         title:`Médecin du travail — ${formatLongDate(eventDate)}`,
         detail:text
       },`medical-${dateISO}`);
