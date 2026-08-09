@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Planning Tridel</title>
-<meta name="app-version" content="15.1">
+<meta name="app-version" content="15.3">
 <style>
 :root{
   --bg:#f3f6fa;--card:#fff;--navy:#17345f;--blue:#2667f5;--text:#172033;
@@ -1562,6 +1562,69 @@ body.view-year .stat-card small{
   }
 }
 
+
+/* V15.2 — commentaires en vue Année */
+body.view-year .mini-cell.has-comment{
+  position:relative;
+  cursor:pointer;
+}
+body.view-year .mini-cell.has-comment::after{
+  content:'';
+  position:absolute;
+  right:4px;
+  bottom:4px;
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  background:currentColor;
+  opacity:.72;
+}
+.year-comment-detail{
+  display:flex;
+  gap:11px;
+  align-items:flex-start;
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#f8fafc;
+}
+.year-comment-icon{
+  width:34px;
+  height:34px;
+  flex:0 0 34px;
+  display:grid;
+  place-items:center;
+  border-radius:9px;
+  background:#fff;
+  border:1px solid var(--line);
+  font-size:15px;
+}
+.year-comment-copy{
+  min-width:0;
+}
+.year-comment-copy strong{
+  display:block;
+  margin-bottom:4px;
+  font-size:10px;
+  color:#42536a;
+}
+.year-comment-copy p{
+  margin:0;
+  color:#1f2c3d;
+  font-size:11px;
+  line-height:1.5;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+}
+@media(max-width:700px){
+  body.view-year .mini-cell.has-comment::after{
+    right:3px;
+    bottom:3px;
+    width:3px;
+    height:3px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1839,11 +1902,11 @@ function renderStats(employee){
       </div>`);
   };
 
-  add('RM','RM','matins');
-  add('RA','RA','après-midis');
-  add('RN','RN','nuits');
-  add('PIQ','PIQ','piquets');
-  add('VA','VA','vacances');
+  add('RM','RM','jours');
+  add('RA','RA','jours');
+  add('RN','RN','jours');
+  add('PIQ','PIQ','jours');
+  add('VA','VA','jours');
 
   $('statsGrid').innerHTML=cards.join('');
   $('statsGrid').style.display=cards.length?'':'none';
@@ -2305,6 +2368,10 @@ function buildUpcomingEvents(employee){
     const text=String(rawText||'').trim();
     if(!text)return;
 
+    // Si la date est déjà codée FE, l'événement "Formation externe"
+    // affiche déjà ce commentaire comme détail : aucun doublon.
+    if(safeCode(employee.schedule[dateISO])==='FE')return;
+
     const eventDate=parseLocalISO(dateISO);
     eventDate.setHours(0,0,0,0);
 
@@ -2430,6 +2497,35 @@ function openDayModal(dateObj,employee=selectedEmployee()){
 
   $('dayModalBackdrop').classList.add('open');
 }
+
+function openYearCommentModal(dateObj,employee=selectedEmployee()){
+  const d=new Date(dateObj);
+  const dISO=isoDate(d);
+  const comment=commentFor(employee,dISO);
+
+  // En vue Année, un jour sans commentaire ne fait rien.
+  if(!comment)return;
+
+  $('dayModalTitle').textContent=cleanEmployeeName(employee.name);
+  $('dayModalDate').textContent=d.toLocaleDateString('fr-CH',{
+    weekday:'long',
+    day:'numeric',
+    month:'long',
+    year:'numeric'
+  });
+
+  $('dayModalBody').innerHTML=`
+    <div class="year-comment-detail">
+      <div class="year-comment-icon">📝</div>
+      <div class="year-comment-copy">
+        <strong>Commentaire</strong>
+        <p>${escapeHTML(comment)}</p>
+      </div>
+    </div>`;
+
+  $('dayModalBackdrop').classList.add('open');
+}
+
 function closeDayModal(){ $('dayModalBackdrop').classList.remove('open'); }
 $('dayModalClose').addEventListener('click',closeDayModal);
 $('dayModalBackdrop').addEventListener('click',e=>{ if(e.target===$('dayModalBackdrop'))closeDayModal(); });
@@ -2437,9 +2533,17 @@ $('dayModalBackdrop').addEventListener('click',e=>{ if(e.target===$('dayModalBac
 function attachDayClickHandlers(){
   document.querySelectorAll('[data-date]').forEach(el=>{
     if(!el.dataset.date)return;
+
     el.addEventListener('click',()=>{
       const [y,m,d]=el.dataset.date.split('-').map(Number);
-      openDayModal(new Date(y,m-1,d));
+      const dateObj=new Date(y,m-1,d);
+
+      if(state.view==='year'){
+        openYearCommentModal(dateObj);
+        return;
+      }
+
+      openDayModal(dateObj);
     });
   });
 }
@@ -2586,7 +2690,10 @@ function renderYear(e){
       const d=new Date(start);d.setDate(start.getDate()+i);
       const c=safeCode(e.schedule[isoDate(d)]);
       const isToday=isoDate(d)===todayISO();
-      const visible=codeMatchesFilter(c); h+=`<span class="mini-cell ${d.getMonth()!==m?'mini-empty':(visible?classFor(c):'mini-empty')} ${isToday?'today':''}" data-date="${d.getMonth()===m?isoDate(d):''}">${d.getMonth()===m?d.getDate():''}</span>`;
+      const dISO=isoDate(d);
+      const visible=codeMatchesFilter(c);
+      const hasComment=d.getMonth()===m && !!commentFor(e,dISO);
+      h+=`<span class="mini-cell ${d.getMonth()!==m?'mini-empty':(visible?classFor(c):'mini-empty')} ${isToday?'today':''} ${hasComment?'has-comment':''}" data-date="${d.getMonth()===m?dISO:''}">${d.getMonth()===m?d.getDate():''}</span>`;
     }
     h+='</div></div>';
   }
