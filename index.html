@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Planning Tridel</title>
-<meta name="app-version" content="12.0">
+<meta name="app-version" content="12.3">
 <style>
 :root{
   --bg:#f3f6fa;--card:#fff;--navy:#17345f;--blue:#2667f5;--text:#172033;
@@ -1341,6 +1341,7 @@ body.view-year .stat-card small{
 .upcoming-vacation{background:#fff7f8}
 .upcoming-training{background:#f7fbff}
 .upcoming-medical{background:#f8fbf7}
+.upcoming-piquet{background:#f7f4fb}
 .upcoming-comment{background:#fafafa}
 
 @media(max-width:700px){
@@ -1770,34 +1771,76 @@ function buildUpcomingEvents(employee){
   end.setDate(end.getDate()+29);
 
   const events=[];
+  const seen=new Set();
+  const comments=employee.comments||{};
 
-  // Vacances : regrouper les VA/VJ consécutifs
+  const pushUnique=(event,key)=>{
+    if(seen.has(key))return;
+    seen.add(key);
+    events.push(event);
+  };
+
+  const isVacationCode=code=>code==='VA' || code==='VJ';
+  const isWeekend=date=>{
+    const day=date.getDay();
+    return day===0 || day===6;
+  };
+
+  // Vacances : regrouper VA/VJ consécutifs ET les périodes séparées uniquement par un week-end
   let cursor=new Date(start);
-  while(cursor<=end){
-    const iso=isoDate(cursor);
-    const code=safeCode(employee.schedule[iso]);
 
-    if(code==='VA' || code==='VJ'){
+  while(cursor<=end){
+    const cursorISO=isoDate(cursor);
+    const code=safeCode(employee.schedule[cursorISO]);
+
+    if(isVacationCode(code)){
       const vacStart=new Date(cursor);
       let vacEnd=new Date(cursor);
-      let next=new Date(cursor);
-      next.setDate(next.getDate()+1);
 
-      while(next<=end){
-        const nextCode=safeCode(employee.schedule[isoDate(next)]);
-        if(nextCode!=='VA' && nextCode!=='VJ')break;
-        vacEnd=new Date(next);
-        next.setDate(next.getDate()+1);
+      let probe=new Date(cursor);
+      probe.setDate(probe.getDate()+1);
+
+      while(probe<=end){
+        const probeCode=safeCode(employee.schedule[isoDate(probe)]);
+
+        if(isVacationCode(probeCode)){
+          vacEnd=new Date(probe);
+          probe.setDate(probe.getDate()+1);
+          continue;
+        }
+
+        if(isWeekend(probe)){
+          let weekendProbe=new Date(probe);
+
+          while(weekendProbe<=end && isWeekend(weekendProbe)){
+            weekendProbe.setDate(weekendProbe.getDate()+1);
+          }
+
+          const afterWeekendCode=weekendProbe<=end
+            ? safeCode(employee.schedule[isoDate(weekendProbe)])
+            : '';
+
+          if(isVacationCode(afterWeekendCode)){
+            vacEnd=new Date(weekendProbe);
+            probe=new Date(weekendProbe);
+            probe.setDate(probe.getDate()+1);
+            continue;
+          }
+        }
+
+        break;
       }
 
-      events.push({
+      const duration=daysBetweenInclusive(vacStart,vacEnd);
+
+      pushUnique({
         type:'vacation',
         date:new Date(vacStart),
         title: vacStart.getTime()===vacEnd.getTime()
           ? `Vacances le ${formatShortDate(vacStart)}`
           : `Vacances du ${formatShortDate(vacStart)} au ${formatShortDate(vacEnd)}`,
-        detail: `${daysBetweenInclusive(vacStart,vacEnd)} jour${daysBetweenInclusive(vacStart,vacEnd)>1?'s':''}`
-      });
+        detail:`${duration} jour${duration>1?'s':''}`
+      },`vacation-${isoDate(vacStart)}-${isoDate(vacEnd)}`);
 
       cursor=new Date(vacEnd);
       cursor.setDate(cursor.getDate()+1);
@@ -1807,31 +1850,114 @@ function buildUpcomingEvents(employee){
     cursor.setDate(cursor.getDate()+1);
   }
 
-  // Commentaires importants
-  const comments=employee.comments||{};
+  // Piquet : regrouper les jours PIQ consécutifs.
+  // Si le piquet est réparti autour d'un week-end, le week-end est intégré à la période.
+  cursor=new Date(start);
+
+  while(cursor<=end){
+    const cursorISO=isoDate(cursor);
+    const code=safeCode(employee.schedule[cursorISO]);
+
+    if(code==='PIQ'){
+      const piqStart=new Date(cursor);
+      let piqEnd=new Date(cursor);
+
+      let probe=new Date(cursor);
+      probe.setDate(probe.getDate()+1);
+
+      while(probe<=end){
+        const probeCode=safeCode(employee.schedule[isoDate(probe)]);
+
+        if(probeCode==='PIQ'){
+          piqEnd=new Date(probe);
+          probe.setDate(probe.getDate()+1);
+          continue;
+        }
+
+        if(isWeekend(probe)){
+          let weekendProbe=new Date(probe);
+
+          while(weekendProbe<=end && isWeekend(weekendProbe)){
+            weekendProbe.setDate(weekendProbe.getDate()+1);
+          }
+
+          const afterWeekendCode=weekendProbe<=end
+            ? safeCode(employee.schedule[isoDate(weekendProbe)])
+            : '';
+
+          if(afterWeekendCode==='PIQ'){
+            piqEnd=new Date(weekendProbe);
+            probe=new Date(weekendProbe);
+            probe.setDate(probe.getDate()+1);
+            continue;
+          }
+        }
+
+        break;
+      }
+
+      pushUnique({
+        type:'piquet',
+        date:new Date(piqStart),
+        title: piqStart.getTime()===piqEnd.getTime()
+          ? `Piquet le ${formatShortDate(piqStart)}`
+          : `Piquet du ${formatShortDate(piqStart)} au ${formatShortDate(piqEnd)}`,
+        detail:'Service de piquet'
+      },`piquet-${isoDate(piqStart)}-${isoDate(piqEnd)}`);
+
+      cursor=new Date(piqEnd);
+      cursor.setDate(cursor.getDate()+1);
+      continue;
+    }
+
+    cursor.setDate(cursor.getDate()+1);
+  }
+
+  // Formation externe : tout code FE est un événement, même sans commentaire.
+  let d=new Date(start);
+  while(d<=end){
+    const dateISO=isoDate(d);
+    const code=safeCode(employee.schedule[dateISO]);
+
+    if(code==='FE'){
+      const rawComment=String(comments[dateISO]||'').trim();
+
+      pushUnique({
+        type:'training',
+        date:new Date(d),
+        title:`Formation externe — ${formatLongDate(d)}`,
+        detail:rawComment || 'Formation externe'
+      },`training-${dateISO}`);
+    }
+
+    d.setDate(d.getDate()+1);
+  }
+
+  // Commentaires importants : formation / médecin du travail
   Object.entries(comments).forEach(([dateISO,rawText])=>{
     const text=String(rawText||'').trim();
     if(!text)return;
 
-    const d=parseLocalISO(dateISO);
-    d.setHours(0,0,0,0);
-    if(d<start || d>end)return;
+    const eventDate=parseLocalISO(dateISO);
+    eventDate.setHours(0,0,0,0);
+    if(eventDate<start || eventDate>end)return;
 
     const category=commentCategory(text);
+
     if(category==='training'){
-      events.push({
+      pushUnique({
         type:'training',
-        date:d,
-        title:`Formation — ${formatLongDate(d)}`,
+        date:eventDate,
+        title:`Formation — ${formatLongDate(eventDate)}`,
         detail:text
-      });
+      },`training-${dateISO}`);
     }else if(category==='medical'){
-      events.push({
+      pushUnique({
         type:'medical',
-        date:d,
-        title:`Médecin du travail — ${formatLongDate(d)}`,
+        date:eventDate,
+        title:`Médecin du travail — ${formatLongDate(eventDate)}`,
         detail:text
-      });
+      },`medical-${dateISO}`);
     }
   });
 
@@ -1854,7 +1980,7 @@ function renderUpcomingEvents(employee){
     return;
   }
 
-  const iconFor=type=>type==='vacation'?'🏖️':type==='training'?'🎓':type==='medical'?'🩺':'•';
+  const iconFor=type=>type==='vacation'?'🏖️':type==='piquet'?'📞':type==='training'?'🎓':type==='medical'?'🩺':'•';
 
   list.innerHTML=events.map(ev=>`
     <div class="upcoming-item upcoming-${ev.type}">
