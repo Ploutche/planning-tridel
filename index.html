@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Planning Tridel</title>
-<meta name="app-version" content="13.3">
+<meta name="app-version" content="13.4">
 <style>
 :root{
   --bg:#f3f6fa;--card:#fff;--navy:#17345f;--blue:#2667f5;--text:#172033;
@@ -1684,7 +1684,7 @@ function normalizeData(raw){
         if(value!=null){
           const code=safeCode(value);
           if(code && !OFFICIAL_CODES.has(code)){
-            throw new Error(`Code inconnu pour ${name} le ${dateISO} : ${code}.`);
+            /* code inconnu autorisé */
           }
         }
       }
