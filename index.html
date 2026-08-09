@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Planning Tridel</title>
-<meta name="app-version" content="11.10">
+<meta name="app-version" content="12.0">
 <style>
 :root{
   --bg:#f3f6fa;--card:#fff;--navy:#17345f;--blue:#2667f5;--text:#172033;
@@ -1257,6 +1257,115 @@ body.view-year .stat-card small{
   }
 }
 
+
+/* V12 : prochains événements */
+.upcoming-card{
+  margin-bottom:10px;
+  padding:11px 12px;
+}
+.upcoming-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:8px;
+}
+.upcoming-kicker{
+  display:block;
+  color:var(--blue);
+  font-size:8px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  margin-bottom:2px;
+}
+.upcoming-head strong{
+  font-size:12px;
+}
+.upcoming-count{
+  flex:0 0 auto;
+  min-width:24px;
+  height:24px;
+  padding:0 7px;
+  border-radius:999px;
+  background:#eef4ff;
+  color:#2159c5;
+  display:grid;
+  place-items:center;
+  font-size:9px;
+  font-weight:900;
+}
+.upcoming-list{
+  display:grid;
+  gap:6px;
+}
+.upcoming-item{
+  display:grid;
+  grid-template-columns:34px minmax(0,1fr);
+  gap:9px;
+  align-items:start;
+  padding:8px 9px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:#fff;
+}
+.upcoming-icon{
+  width:30px;
+  height:30px;
+  border-radius:9px;
+  display:grid;
+  place-items:center;
+  font-size:14px;
+  background:#f5f7fb;
+}
+.upcoming-copy{
+  min-width:0;
+}
+.upcoming-copy strong{
+  display:block;
+  font-size:10px;
+  line-height:1.25;
+}
+.upcoming-copy small{
+  display:block;
+  margin-top:2px;
+  color:var(--muted);
+  font-size:8px;
+  line-height:1.35;
+}
+.upcoming-empty{
+  padding:9px 4px 2px;
+  color:var(--muted);
+  font-size:9px;
+}
+.upcoming-vacation{background:#fff7f8}
+.upcoming-training{background:#f7fbff}
+.upcoming-medical{background:#f8fbf7}
+.upcoming-comment{background:#fafafa}
+
+@media(max-width:700px){
+  .upcoming-card{
+    padding:9px;
+    margin-bottom:8px;
+  }
+  .upcoming-head{
+    margin-bottom:6px;
+  }
+  .upcoming-item{
+    grid-template-columns:28px minmax(0,1fr);
+    padding:7px 8px;
+    gap:7px;
+  }
+  .upcoming-icon{
+    width:26px;
+    height:26px;
+    border-radius:8px;
+    font-size:12px;
+  }
+  .upcoming-copy strong{font-size:9px}
+  .upcoming-copy small{font-size:8px}
+}
+
 </style>
 </head>
 <body>
@@ -1301,6 +1410,18 @@ body.view-year .stat-card small{
       </div>
       <button id="todayBtn" class="today-btn" type="button">Aujourd’hui</button>
     </div>
+  </section>
+
+
+  <section id="upcomingEventsCard" class="card upcoming-card hidden">
+    <div class="upcoming-head">
+      <div>
+        <span class="upcoming-kicker">Prochains événements</span>
+        <strong id="upcomingTitle">30 prochains jours</strong>
+      </div>
+      <span id="upcomingCount" class="upcoming-count"></span>
+    </div>
+    <div id="upcomingEvents" class="upcoming-list"></div>
   </section>
 
   <main class="card main-card">
@@ -1367,7 +1488,7 @@ const CODE_INFO={
   VA:['Vacances','Absence planifiée'],VJ:['Vacances','Absence planifiée'],HOR:['Récupération d\'heure optionnel','Absence planifiée'],
   HSR:['Récupération d\'heure supplémentaire','Absence planifiée'],PIQ:['Piquet','Service de piquet'],RF:['Repos férié','Jour férié'],
   CA:['Cours / activité','Affectation'],GR:['Groupe','Affectation'],EN:['Entretien','Affectation'],FE:['Férié','Absence'],
-  PO:['Portes','Affectation'],MI:['Militaire','Absence'],PI:['Reprise de piquet','Absence planifiée'],EM:['Enfant malade','Absence planifiée'],AN:['Ancienneté','Absence'],
+  PO:['Portes','Affectation'],MI:['Militaire','Absence'],PI:['Reprise de piquet','Absence planifiée'],PC:['Protection civile','Absence planifiée'],EM:['Enfant malade','Absence planifiée'],AN:['Ancienneté','Absence'],
   AP:['Accident professionnel','Absence'],PR:['Personnel','Absence'],MS:['Maladie','Absence'],MC:['Maladie / certificat','Absence']
 };
 
@@ -1382,12 +1503,7 @@ const classFor=code=>code?`code-${code.replace(/[^A-Z0-9_-]/g,'')}`:'code-off';
 
 const ROTATION_CODES=['RM','RA','RN'];
 const LEGEND_ORDER=[
-  'RM','RA','RN','PIQ','R',
-  'VA','VJ',
-  'HOR','HSR',
-  'RF','FE','PO',
-  'CA','GR','EN',
-  'MI','PI','AN','AP','PR','MS','MC'
+  'RM','RA','RN','PIQ','R','VA','VJ','HOR','HSR','FE','PC','PI','EM','RF','PO','CA','GR','EN','MI','AN','AP','PR','MS','MC'
 ];
 const OFFICIAL_CODES=new Set(LEGEND_ORDER);
 
@@ -1622,6 +1738,135 @@ function showError(error){
 }
 
 function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+
+function parseLocalISO(dateISO){
+  const [y,m,d]=String(dateISO).split('-').map(Number);
+  return new Date(y,m-1,d);
+}
+
+function daysBetweenInclusive(a,b){
+  return Math.round((b-a)/86400000)+1;
+}
+
+function formatShortDate(d){
+  return d.toLocaleDateString('fr-CH',{day:'2-digit',month:'2-digit'});
+}
+
+function formatLongDate(d){
+  return d.toLocaleDateString('fr-CH',{weekday:'short',day:'numeric',month:'short'});
+}
+
+function commentCategory(text){
+  const t=String(text||'').toLocaleLowerCase('fr');
+  if(t.includes('formation'))return 'training';
+  if(t.includes('médecin du travail') || t.includes('medecin du travail') || t.includes('médecin travail') || t.includes('medecin travail'))return 'medical';
+  return 'comment';
+}
+
+function buildUpcomingEvents(employee){
+  const start=new Date();
+  start.setHours(0,0,0,0);
+  const end=new Date(start);
+  end.setDate(end.getDate()+29);
+
+  const events=[];
+
+  // Vacances : regrouper les VA/VJ consécutifs
+  let cursor=new Date(start);
+  while(cursor<=end){
+    const iso=isoDate(cursor);
+    const code=safeCode(employee.schedule[iso]);
+
+    if(code==='VA' || code==='VJ'){
+      const vacStart=new Date(cursor);
+      let vacEnd=new Date(cursor);
+      let next=new Date(cursor);
+      next.setDate(next.getDate()+1);
+
+      while(next<=end){
+        const nextCode=safeCode(employee.schedule[isoDate(next)]);
+        if(nextCode!=='VA' && nextCode!=='VJ')break;
+        vacEnd=new Date(next);
+        next.setDate(next.getDate()+1);
+      }
+
+      events.push({
+        type:'vacation',
+        date:new Date(vacStart),
+        title: vacStart.getTime()===vacEnd.getTime()
+          ? `Vacances le ${formatShortDate(vacStart)}`
+          : `Vacances du ${formatShortDate(vacStart)} au ${formatShortDate(vacEnd)}`,
+        detail: `${daysBetweenInclusive(vacStart,vacEnd)} jour${daysBetweenInclusive(vacStart,vacEnd)>1?'s':''}`
+      });
+
+      cursor=new Date(vacEnd);
+      cursor.setDate(cursor.getDate()+1);
+      continue;
+    }
+
+    cursor.setDate(cursor.getDate()+1);
+  }
+
+  // Commentaires importants
+  const comments=employee.comments||{};
+  Object.entries(comments).forEach(([dateISO,rawText])=>{
+    const text=String(rawText||'').trim();
+    if(!text)return;
+
+    const d=parseLocalISO(dateISO);
+    d.setHours(0,0,0,0);
+    if(d<start || d>end)return;
+
+    const category=commentCategory(text);
+    if(category==='training'){
+      events.push({
+        type:'training',
+        date:d,
+        title:`Formation — ${formatLongDate(d)}`,
+        detail:text
+      });
+    }else if(category==='medical'){
+      events.push({
+        type:'medical',
+        date:d,
+        title:`Médecin du travail — ${formatLongDate(d)}`,
+        detail:text
+      });
+    }
+  });
+
+  events.sort((a,b)=>a.date-b.date);
+  return events;
+}
+
+function renderUpcomingEvents(employee){
+  const card=$('upcomingEventsCard');
+  const list=$('upcomingEvents');
+  const count=$('upcomingCount');
+  const events=buildUpcomingEvents(employee);
+
+  // Le bloc reste visible même s'il n'y a rien, mais très discret
+  card.classList.remove('hidden');
+  count.textContent=events.length||'';
+
+  if(!events.length){
+    list.innerHTML='<div class="upcoming-empty">Aucun événement important dans les 30 prochains jours.</div>';
+    return;
+  }
+
+  const iconFor=type=>type==='vacation'?'🏖️':type==='training'?'🎓':type==='medical'?'🩺':'•';
+
+  list.innerHTML=events.map(ev=>`
+    <div class="upcoming-item upcoming-${ev.type}">
+      <div class="upcoming-icon">${iconFor(ev.type)}</div>
+      <div class="upcoming-copy">
+        <strong>${escapeHTML(ev.title)}</strong>
+        <small>${escapeHTML(ev.detail)}</small>
+      </div>
+    </div>
+  `).join('');
+}
+
 function selectedEmployee(){return planning.employees.find(e=>e.id===state.employeeId)||planning.employees[0]}
 function mondayOf(date){const d=new Date(date);const day=(d.getDay()+6)%7;d.setDate(d.getDate()-day);d.setHours(0,0,0,0);return d}
 function isoWeek(date){const d=new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate()));const day=d.getUTCDay()||7;d.setUTCDate(d.getUTCDate()+4-day);const start=new Date(Date.UTC(d.getUTCFullYear(),0,1));return Math.ceil((((d-start)/86400000)+1)/7)}
@@ -1710,6 +1955,7 @@ function render(){
   }
 
   renderLegend(e);
+  renderUpcomingEvents(e);
   attachDayClickHandlers();
 }
 
