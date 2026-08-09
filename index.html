@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Planning Tridel</title>
-<meta name="app-version" content="13.5">
+<meta name="app-version" content="14.0">
 <style>
 :root{
   --bg:#f3f6fa;--card:#fff;--navy:#17345f;--blue:#2667f5;--text:#172033;
@@ -1385,9 +1385,188 @@ body.view-year .stat-card small{
   color:#4d5968;
 }
 
+
+/* V14 — authentification OTP */
+.auth-gate{
+  position:fixed;
+  inset:0;
+  z-index:99999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(60,110,220,.10), transparent 34%),
+    linear-gradient(180deg,#f7f9fc,#eef2f7);
+}
+.auth-gate.hidden{display:none!important}
+
+.auth-card{
+  width:min(390px,100%);
+  padding:24px;
+  border:1px solid #dce3ed;
+  border-radius:18px;
+  background:#fff;
+  box-shadow:0 22px 70px rgba(30,50,80,.14);
+}
+.auth-brand{
+  color:#2b65d9;
+  font-size:10px;
+  font-weight:950;
+  text-transform:uppercase;
+  letter-spacing:.10em;
+  margin-bottom:8px;
+}
+.auth-card h1{
+  margin:0 0 7px;
+  font-size:23px;
+}
+.auth-card p{
+  margin:0 0 18px;
+  color:#6c7788;
+  font-size:11px;
+  line-height:1.45;
+}
+.auth-label{
+  display:block;
+  margin:10px 0 5px;
+  color:#4f5d72;
+  font-size:9px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+}
+.auth-input{
+  width:100%;
+  height:44px;
+  box-sizing:border-box;
+  border:1px solid #d8e0eb;
+  border-radius:10px;
+  padding:0 11px;
+  background:#fff;
+  color:#1f2b3d;
+  outline:none;
+  font-size:12px;
+}
+.auth-input:focus{
+  border-color:#91afea;
+  box-shadow:0 0 0 3px rgba(38,103,245,.08);
+}
+.auth-code-input{
+  text-align:center;
+  font-size:20px;
+  font-weight:900;
+  letter-spacing:.16em;
+}
+.auth-primary,.auth-secondary{
+  width:100%;
+  min-height:42px;
+  margin-top:10px;
+  border-radius:10px;
+  font-size:11px;
+  font-weight:900;
+}
+.auth-primary{
+  border:1px solid #2867e6;
+  background:#2867e6;
+  color:#fff;
+}
+.auth-primary:disabled{opacity:.55;cursor:not-allowed}
+.auth-secondary{
+  border:1px solid #dce3ed;
+  background:#fff;
+  color:#53627a;
+}
+.auth-sent{
+  margin:0 0 10px;
+  padding:8px 9px;
+  border-radius:9px;
+  background:#f2f6fd;
+  color:#56657c;
+  font-size:10px;
+}
+.auth-message{
+  margin-top:10px;
+  padding:9px 10px;
+  border-radius:9px;
+  font-size:10px;
+  line-height:1.35;
+}
+.auth-message.error{
+  display:block!important;
+  background:#fff0f0;
+  color:#a73737;
+}
+.auth-message.success{
+  display:block!important;
+  background:#eef9f1;
+  color:#31704a;
+}
+.auth-note{
+  margin-top:15px;
+  color:#9aa3b1;
+  font-size:8px;
+  text-align:center;
+}
+.auth-logout{
+  border:1px solid var(--line);
+  background:#fff;
+  color:#56657a;
+  border-radius:8px;
+  padding:6px 9px;
+  font-size:8px;
+  font-weight:850;
+}
+.auth-logout:hover{border-color:#bac9e2;color:#255bbd}
+
+@media(max-width:700px){
+  .auth-gate{
+    align-items:flex-end;
+    padding:8px;
+  }
+  .auth-card{
+    width:100%;
+    padding:19px 16px 17px;
+    border-radius:18px 18px 12px 12px;
+  }
+  .auth-card h1{font-size:20px}
+}
+
 </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+
+<div id="authGate" class="auth-gate">
+  <div class="auth-card">
+    <div class="auth-brand">Planning Tridel</div>
+    <h1>Connexion</h1>
+    <p id="authIntro">Utilise ton adresse professionnelle <strong>@tridelsa.ch</strong>.</p>
+
+    <div id="authEmailStep">
+      <label class="auth-label" for="authEmail">Adresse e-mail</label>
+      <input id="authEmail" class="auth-input" type="email" autocomplete="email"
+             placeholder="prenom.nom@tridelsa.ch">
+      <button id="authSendCode" class="auth-primary" type="button">Recevoir un code</button>
+    </div>
+
+    <div id="authCodeStep" class="hidden">
+      <div class="auth-sent">
+        Code envoyé à <strong id="authEmailDisplay"></strong>
+      </div>
+      <label class="auth-label" for="authCode">Code reçu par e-mail</label>
+      <input id="authCode" class="auth-input auth-code-input" type="text"
+             inputmode="numeric" autocomplete="one-time-code"
+             maxlength="8" placeholder="000000">
+      <button id="authVerifyCode" class="auth-primary" type="button">Se connecter</button>
+      <button id="authChangeEmail" class="auth-secondary" type="button">Changer d’adresse</button>
+    </div>
+
+    <div id="authMessage" class="auth-message hidden"></div>
+    <div class="auth-note">Accès réservé aux adresses professionnelles TRIDEL.</div>
+  </div>
+</div>
+
 <div class="app">
   <header class="hero">
     <div class="hero-inner">
@@ -1401,7 +1580,9 @@ body.view-year .stat-card small{
         <span id="updateStatus"></span>
       </div>
     </div>
-  </header>
+  
+<button id="authLogout" class="auth-logout hidden" type="button">Déconnexion</button>
+</header>
 
   <section class="card controls">
     <div class="controls-grid">
@@ -1499,6 +1680,215 @@ body.view-year .stat-card small{
 </div>
 
 <script>
+/* =========================================================
+   AUTHENTIFICATION SUPABASE
+   1) Crée un projet Supabase.
+   2) Remplace les 2 valeurs ci-dessous.
+   ========================================================= */
+const SUPABASE_URL='COLLE_ICI_TON_SUPABASE_URL';
+const SUPABASE_ANON_KEY='COLLE_ICI_TA_SUPABASE_ANON_KEY';
+const ALLOWED_EMAIL_DOMAIN='tridelsa.ch';
+
+const authConfigured=
+  SUPABASE_URL.startsWith('https://') &&
+  !SUPABASE_URL.includes('COLLE_ICI') &&
+  !SUPABASE_ANON_KEY.includes('COLLE_ICI');
+
+const supabaseClient=authConfigured
+  ? window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{
+      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
+    })
+  : null;
+
+let authPendingEmail='';
+
+function normalizeAuthEmail(value){
+  return String(value||'').trim().toLocaleLowerCase('fr');
+}
+
+function isAllowedTridelEmail(email){
+  const normalized=normalizeAuthEmail(email);
+  return normalized.endsWith('@'+ALLOWED_EMAIL_DOMAIN) &&
+         normalized.split('@').length===2 &&
+         normalized.indexOf('@')>0;
+}
+
+function authSetMessage(message,type='error'){
+  const el=document.getElementById('authMessage');
+  if(!el)return;
+  if(!message){
+    el.textContent='';
+    el.className='auth-message hidden';
+    return;
+  }
+  el.textContent=message;
+  el.className=`auth-message ${type}`;
+}
+
+function authSetBusy(button,busy,label){
+  if(!button)return;
+  button.disabled=busy;
+  if(label)button.textContent=label;
+}
+
+function authShowEmailStep(){
+  document.getElementById('authEmailStep')?.classList.remove('hidden');
+  document.getElementById('authCodeStep')?.classList.add('hidden');
+  authSetMessage('');
+}
+
+function authShowCodeStep(email){
+  document.getElementById('authEmailStep')?.classList.add('hidden');
+  document.getElementById('authCodeStep')?.classList.remove('hidden');
+  const display=document.getElementById('authEmailDisplay');
+  if(display)display.textContent=email;
+  document.getElementById('authCode')?.focus();
+}
+
+function authUnlock(){
+  document.getElementById('authGate')?.classList.add('hidden');
+  document.getElementById('authLogout')?.classList.remove('hidden');
+}
+
+function authLock(){
+  document.getElementById('authGate')?.classList.remove('hidden');
+  document.getElementById('authLogout')?.classList.add('hidden');
+  authShowEmailStep();
+}
+
+async function authSendOtp(){
+  if(!authConfigured){
+    authSetMessage('Supabase n’est pas encore configuré dans index.html.');
+    return;
+  }
+
+  const email=normalizeAuthEmail(document.getElementById('authEmail')?.value);
+
+  if(!isAllowedTridelEmail(email)){
+    authSetMessage(`Seules les adresses @${ALLOWED_EMAIL_DOMAIN} sont autorisées.`);
+    return;
+  }
+
+  const button=document.getElementById('authSendCode');
+  authSetBusy(button,true,'Envoi…');
+  authSetMessage('');
+
+  try{
+    const {error}=await supabaseClient.auth.signInWithOtp({
+      email,
+      options:{shouldCreateUser:true}
+    });
+    if(error)throw error;
+
+    authPendingEmail=email;
+    authShowCodeStep(email);
+    authSetMessage('Code envoyé. Vérifie ta boîte e-mail.','success');
+  }catch(error){
+    console.error(error);
+    authSetMessage(error?.message || 'Impossible d’envoyer le code.');
+  }finally{
+    authSetBusy(button,false,'Recevoir un code');
+  }
+}
+
+async function authVerifyOtp(){
+  if(!authConfigured)return;
+
+  const code=String(document.getElementById('authCode')?.value||'').trim();
+  if(!/^\d{6,8}$/.test(code)){
+    authSetMessage('Entre le code reçu par e-mail.');
+    return;
+  }
+
+  if(!isAllowedTridelEmail(authPendingEmail)){
+    authSetMessage('Adresse e-mail non autorisée.');
+    return;
+  }
+
+  const button=document.getElementById('authVerifyCode');
+  authSetBusy(button,true,'Vérification…');
+  authSetMessage('');
+
+  try{
+    const {data,error}=await supabaseClient.auth.verifyOtp({
+      email:authPendingEmail,
+      token:code,
+      type:'email'
+    });
+    if(error)throw error;
+
+    const sessionEmail=normalizeAuthEmail(data?.user?.email);
+    if(!isAllowedTridelEmail(sessionEmail)){
+      await supabaseClient.auth.signOut();
+      throw new Error('Ce compte n’appartient pas au domaine TRIDEL.');
+    }
+
+    authUnlock();
+  }catch(error){
+    console.error(error);
+    authSetMessage(error?.message || 'Code incorrect ou expiré.');
+  }finally{
+    authSetBusy(button,false,'Se connecter');
+  }
+}
+
+async function authLogout(){
+  if(supabaseClient)await supabaseClient.auth.signOut();
+  authPendingEmail='';
+  authLock();
+}
+
+async function initializeAuthGate(){
+  if(!authConfigured){
+    authLock();
+    authSetMessage(
+      'Configuration Supabase manquante : renseigne SUPABASE_URL et SUPABASE_ANON_KEY dans index.html.'
+    );
+    return;
+  }
+
+  const {data:{session}}=await supabaseClient.auth.getSession();
+  const email=normalizeAuthEmail(session?.user?.email);
+
+  if(session && isAllowedTridelEmail(email)){
+    authUnlock();
+  }else{
+    if(session)await supabaseClient.auth.signOut();
+    authLock();
+  }
+
+  supabaseClient.auth.onAuthStateChange(async(_event,nextSession)=>{
+    const nextEmail=normalizeAuthEmail(nextSession?.user?.email);
+    if(nextSession && isAllowedTridelEmail(nextEmail)){
+      authUnlock();
+    }else{
+      authLock();
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('authSendCode')?.addEventListener('click',authSendOtp);
+  document.getElementById('authVerifyCode')?.addEventListener('click',authVerifyOtp);
+  document.getElementById('authChangeEmail')?.addEventListener('click',()=>{
+    authPendingEmail='';
+    document.getElementById('authCode').value='';
+    authShowEmailStep();
+  });
+  document.getElementById('authLogout')?.addEventListener('click',authLogout);
+
+  document.getElementById('authEmail')?.addEventListener('keydown',e=>{
+    if(e.key==='Enter')authSendOtp();
+  });
+  document.getElementById('authCode')?.addEventListener('keydown',e=>{
+    if(e.key==='Enter')authVerifyOtp();
+  });
+
+  initializeAuthGate();
+});
+
+
+
 const DATA_FILE='planning.json';
 const DAY_NAMES=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 const MONTH_NAMES=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
