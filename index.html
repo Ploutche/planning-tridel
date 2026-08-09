@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Planning Tridel</title>
-<meta name="app-version" content="13.0">
+<meta name="app-version" content="13.3">
 <style>
 :root{
   --bg:#f3f6fa;--card:#fff;--navy:#17345f;--blue:#2667f5;--text:#172033;
@@ -1378,6 +1378,13 @@ body.view-year .stat-card small{
   font-weight:850!important;
 }
 
+
+/* V13.3 : codes inconnus tolérés */
+.week-shift:not([class*="code-"]){
+  background:#f4f6f8;
+  color:#4d5968;
+}
+
 </style>
 </head>
 <body>
@@ -2218,7 +2225,8 @@ function compactShiftLabel(code){
   if(c==='RM')return 'Matin';
   if(c==='RA')return 'Après-midi';
   if(c==='RN')return 'Nuit';
-  return (CODE_INFO[c]||[c||'Repos'])[0];
+  if(CODE_INFO[c])return CODE_INFO[c][0];
+  return '';
 }
 
 function normalizeSearchText(value){
@@ -2265,7 +2273,7 @@ function codeHTML(code,dateISO,currentId){
     : `<div class="shift-team compact-team no-mates"><span class="shift-team-inline placeholder">&nbsp;</span></div>`;
 
   return `<div class="week-shift ${classFor(c)}">
-    <div class="shift-mainline"><b>${escapeHTML(c||'—')}</b><span>${escapeHTML(displayLabel)}</span></div>
+    <div class="shift-mainline"><b>${escapeHTML(c||'—')}</b>${displayLabel?`<span>${escapeHTML(displayLabel)}</span>`:''}</div>
     <div class="shift-time ${feComment?'fe-comment':''}">${escapeHTML(secondary)}</div>
     ${teamHTML}
   </div>`;
