@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Planning Tridel</title>
-<meta name="app-version" content="12.4">
+<meta name="app-version" content="13.0">
 <style>
 :root{
   --bg:#f3f6fa;--card:#fff;--navy:#17345f;--blue:#2667f5;--text:#172033;
@@ -1367,6 +1367,17 @@ body.view-year .stat-card small{
   .upcoming-copy small{font-size:8px}
 }
 
+
+/* V13 : fiabilité / dernier planning valide */
+.status-warning{
+  color:#8d5a00!important;
+  background:#fff4d8!important;
+  border-radius:8px;
+  padding:4px 7px;
+  font-size:8px!important;
+  font-weight:850!important;
+}
+
 </style>
 </head>
 <body>
@@ -1493,7 +1504,7 @@ const CODE_INFO={
   AP:['Accident professionnel','Absence'],PR:['Personnel','Absence'],MS:['Maladie','Absence'],MC:['Maladie / certificat','Absence']
 };
 
-let planning={year:new Date().getFullYear(),employees:[],updatedAt:''};
+let planning={year:new Date().getFullYear(),employees:[],updatedAt:'',publicationId:'',schemaVersion:0,dateCount:0};
 let state={view:['week','month','year'].includes(localStorage.getItem('planningView'))?localStorage.getItem('planningView'):'week',employeeId:null,date:new Date()};
 const $=id=>document.getElementById(id);
 const pad=n=>String(n).padStart(2,'0');
@@ -1508,7 +1519,7 @@ const LEGEND_ORDER=[
 ];
 const OFFICIAL_CODES=new Set(LEGEND_ORDER);
 
-const ABSENCE_CODES=['VA','VJ','FE','HOR','HSR','MI','AN','AP','PR','MS','MC'];
+const ABSENCE_CODES=['VA','VJ','FE','HOR','HSR','PC','PI','EM','MI','AN','AP','PR','MS','MC'];
 
 function codeMatchesFilter(code){return true;}
 
@@ -1607,44 +1618,144 @@ function isVacantEmployee(name){
 }
 
 function normalizeData(raw){
-  const rawEmployees=raw.employes||raw.employees||[];
+  if(!raw || typeof raw!=='object' || Array.isArray(raw)){
+    throw new Error('planning.json ne contient pas un objet JSON valide.');
+  }
+
+  const schemaVersion=Number(raw.schema_version||raw.schemaVersion||1);
+  const publicationId=String(raw.publication_id||raw.publicationId||'');
+  const declaredEmployeeCount=Number(raw.employee_count||raw.employeeCount||0);
+  const declaredDateCount=Number(raw.date_count||raw.dateCount||0);
+
+  const rawEmployees=raw.employes||raw.employees;
+  if(!Array.isArray(rawEmployees)){
+    throw new Error('La liste des employés est absente ou invalide.');
+  }
+
+  const namesSeen=new Set();
+
   const employees=rawEmployees
-    .map((e,index)=>({
-      id:String(e.id||`ligne-${index+1}`),
-      name:cleanEmployeeName(e.nom||e.name||`Employé ${index+1}`),
-      schedule:e.planning||e.schedule||{},
-      comments:e.commentaires||e.comments||{}
-    }))
+    .map((e,index)=>{
+      if(!e || typeof e!=='object'){
+        throw new Error(`Employé invalide à la position ${index+1}.`);
+      }
+
+      const name=cleanEmployeeName(e.nom||e.name||'');
+      const schedule=e.planning||e.schedule||{};
+      const comments=e.commentaires||e.comments||{};
+
+      if(!name){
+        throw new Error(`Un employé publié n’a pas de nom (position ${index+1}).`);
+      }
+
+      const nameKey=name.toLocaleUpperCase('fr');
+      if(namesSeen.has(nameKey)){
+        throw new Error(`Nom d’employé en double dans planning.json : ${name}.`);
+      }
+      namesSeen.add(nameKey);
+
+      if(!schedule || typeof schedule!=='object' || Array.isArray(schedule)){
+        throw new Error(`Planning invalide pour ${name}.`);
+      }
+
+      if(!comments || typeof comments!=='object' || Array.isArray(comments)){
+        throw new Error(`Commentaires invalides pour ${name}.`);
+      }
+
+      const dateKeys=Object.keys(schedule);
+
+      if(schemaVersion>=2 && declaredDateCount>0 && dateKeys.length!==declaredDateCount){
+        throw new Error(`Nombre de dates incohérent pour ${name} (${dateKeys.length}/${declaredDateCount}).`);
+      }
+
+      for(const dateISO of dateKeys){
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(dateISO)){
+          throw new Error(`Date invalide pour ${name} : ${dateISO}.`);
+        }
+
+        const value=schedule[dateISO];
+        if(value!=null){
+          const code=safeCode(value);
+          if(code && !OFFICIAL_CODES.has(code)){
+            throw new Error(`Code inconnu pour ${name} le ${dateISO} : ${code}.`);
+          }
+        }
+      }
+
+      return {
+        id:String(e.id||`ligne-${index+1}`),
+        name,
+        schedule,
+        comments
+      };
+    })
     .filter(e=>e.name && !isVacantEmployee(e.name))
     .sort((a,b)=>a.name.localeCompare(b.name,'fr',{sensitivity:'base'}));
 
-  if(!employees.length)throw new Error('Aucun employé visible n’a été publié.');
+  if(!employees.length){
+    throw new Error('Aucun employé visible n’a été publié.');
+  }
 
-  const employeesWithSchedule=employees.filter(e=>e.schedule && typeof e.schedule==='object');
-  if(employeesWithSchedule.length!==employees.length){
-    throw new Error('Le fichier planning.json contient au moins un planning employé invalide.');
+  if(schemaVersion>=2){
+    if(!publicationId){
+      throw new Error('Identifiant de publication manquant.');
+    }
+    if(declaredEmployeeCount!==employees.length){
+      throw new Error(`Nombre d’employés incohérent (${employees.length}/${declaredEmployeeCount}).`);
+    }
+    if(declaredDateCount<=0){
+      throw new Error('Nombre de dates publié invalide.');
+    }
   }
 
   return {
     year:Number(raw.annee||raw.year)||new Date().getFullYear(),
     updatedAt:raw.mise_a_jour||raw.updatedAt||'',
+    publicationId,
+    schemaVersion,
+    dateCount:declaredDateCount,
     employees
   };
 }
 
 async function loadPlanning(preserve=true){
   try{
-    const response=await fetch(`${DATA_FILE}?v=${Date.now()}`,{cache:'no-store'});
-    if(!response.ok)throw new Error(`planning.json est introuvable (${response.status}).`);
-    const next=normalizeData(await response.json());
+    const response=await fetch(`${DATA_FILE}?v=${Date.now()}`,{
+      cache:'no-store',
+      headers:{'Accept':'application/json'}
+    });
+
+    if(!response.ok){
+      throw new Error(`planning.json est introuvable (${response.status}).`);
+    }
+
+    const raw=await response.json();
+    const next=normalizeData(raw);
+
     const previousId=state.employeeId;
+
+    // On ne remplace la version affichée qu'après validation complète.
     planning=next;
+
     initializeState(preserve ? previousId : null);
     populateEmployees();
     updateEmployeePicker();
     showUI();
     render();
-  }catch(error){showError(error)}
+
+    $('sourceStatus').textContent='';
+    $('sourceStatus').classList.remove('status-warning');
+  }catch(error){
+    // Si une version valide est déjà affichée, on la conserve.
+    if(planning.employees && planning.employees.length){
+      console.error('Actualisation du planning refusée :',error);
+      $('sourceStatus').textContent='⚠ Actualisation refusée';
+      $('sourceStatus').classList.add('status-warning');
+      return;
+    }
+
+    showError(error);
+  }
 }
 
 function initializeState(preferredId){
