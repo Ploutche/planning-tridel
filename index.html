@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Planning Tridel</title>
-<meta name="app-version" content="14.1">
+<meta name="app-version" content="15.0">
 <style>
 :root{
   --bg:#f3f6fa;--card:#fff;--navy:#17345f;--blue:#2667f5;--text:#172033;
@@ -1386,184 +1386,253 @@ body.view-year .stat-card small{
 }
 
 
-/* V14 — authentification OTP */
-.auth-gate{
+/* ==========================================================
+   V15 — Firebase Authentication (clean)
+   ========================================================== */
+.firebase-auth-gate{
   position:fixed;
   inset:0;
   z-index:99999;
   display:flex;
   align-items:center;
   justify-content:center;
-  padding:18px;
+  padding:20px;
   background:
-    radial-gradient(circle at 30% 20%, rgba(60,110,220,.10), transparent 34%),
-    linear-gradient(180deg,#f7f9fc,#eef2f7);
+    radial-gradient(circle at 20% 0%, rgba(55,103,190,.12), transparent 32%),
+    linear-gradient(180deg,#f7f9fc 0%,#edf2f8 100%);
 }
-.auth-gate.hidden{display:none!important}
+.firebase-auth-gate.hidden{display:none!important}
 
-.auth-card{
-  width:min(390px,100%);
-  padding:24px;
-  border:1px solid #dce3ed;
-  border-radius:18px;
+.firebase-auth-card{
+  width:min(410px,100%);
+  padding:27px;
+  border:1px solid #dce4ef;
+  border-radius:20px;
   background:#fff;
-  box-shadow:0 22px 70px rgba(30,50,80,.14);
+  box-shadow:0 24px 80px rgba(25,46,77,.15);
 }
-.auth-brand{
-  color:#2b65d9;
-  font-size:10px;
+.firebase-auth-logo{
+  width:48px;
+  height:48px;
+  display:grid;
+  place-items:center;
+  margin-bottom:17px;
+  border-radius:13px;
+  background:#244d82;
+  color:#fff;
+  font-size:15px;
+  font-weight:950;
+  letter-spacing:.03em;
+}
+.firebase-auth-eyebrow{
+  margin-bottom:5px;
+  color:#2d67c9;
+  font-size:9px;
   font-weight:950;
   text-transform:uppercase;
-  letter-spacing:.10em;
-  margin-bottom:8px;
+  letter-spacing:.09em;
 }
-.auth-card h1{
-  margin:0 0 7px;
-  font-size:23px;
+.firebase-auth-card h1{
+  margin:0 0 8px;
+  color:#172235;
+  font-size:24px;
+  line-height:1.15;
 }
-.auth-card p{
+.firebase-auth-card p{
   margin:0 0 18px;
-  color:#6c7788;
+  color:#69778c;
   font-size:11px;
-  line-height:1.45;
+  line-height:1.5;
 }
-.auth-label{
+.firebase-auth-card label{
   display:block;
-  margin:10px 0 5px;
-  color:#4f5d72;
+  margin:0 0 6px;
+  color:#46566c;
   font-size:9px;
   font-weight:900;
   text-transform:uppercase;
-  letter-spacing:.05em;
+  letter-spacing:.055em;
 }
-.auth-input{
+.firebase-auth-input{
   width:100%;
-  height:44px;
+  height:46px;
   box-sizing:border-box;
-  border:1px solid #d8e0eb;
-  border-radius:10px;
-  padding:0 11px;
+  padding:0 12px;
+  border:1px solid #d4deea;
+  border-radius:11px;
   background:#fff;
-  color:#1f2b3d;
+  color:#18263a;
   outline:none;
   font-size:12px;
 }
-.auth-input:focus{
-  border-color:#91afea;
-  box-shadow:0 0 0 3px rgba(38,103,245,.08);
+.firebase-auth-input:focus{
+  border-color:#7ba3e8;
+  box-shadow:0 0 0 3px rgba(45,103,201,.09);
 }
-.auth-code-input{
-  text-align:center;
-  font-size:20px;
-  font-weight:900;
-  letter-spacing:.16em;
-}
-.auth-primary,.auth-secondary{
+.firebase-auth-primary,
+.firebase-auth-secondary{
   width:100%;
-  min-height:42px;
-  margin-top:10px;
-  border-radius:10px;
+  min-height:44px;
+  margin-top:11px;
+  border-radius:11px;
   font-size:11px;
   font-weight:900;
+  cursor:pointer;
 }
-.auth-primary{
-  border:1px solid #2867e6;
-  background:#2867e6;
+.firebase-auth-primary{
+  border:1px solid #2e69dd;
+  background:#2e69dd;
   color:#fff;
 }
-.auth-primary:disabled{opacity:.55;cursor:not-allowed}
-.auth-secondary{
-  border:1px solid #dce3ed;
+.firebase-auth-primary:hover{background:#255fcf}
+.firebase-auth-primary:disabled{
+  opacity:.58;
+  cursor:wait;
+}
+.firebase-auth-secondary{
+  border:1px solid #d7e0eb;
   background:#fff;
-  color:#53627a;
+  color:#506078;
 }
-.auth-sent{
-  margin:0 0 10px;
-  padding:8px 9px;
-  border-radius:9px;
-  background:#f2f6fd;
-  color:#56657c;
-  font-size:10px;
+.firebase-auth-success-icon{
+  width:42px;
+  height:42px;
+  display:grid;
+  place-items:center;
+  margin-bottom:15px;
+  border-radius:50%;
+  background:#e9f7ee;
+  color:#267348;
+  font-size:18px;
+  font-weight:950;
 }
-.auth-message{
-  margin-top:10px;
+.firebase-auth-small{
+  margin-top:-7px!important;
+  font-size:9px!important;
+}
+.firebase-auth-message{
+  margin-top:11px;
   padding:9px 10px;
   border-radius:9px;
-  font-size:10px;
-  line-height:1.35;
+  font-size:9px;
+  line-height:1.4;
 }
-.auth-message.error{
+.firebase-auth-message.error{
   display:block!important;
   background:#fff0f0;
-  color:#a73737;
+  color:#a13333;
 }
-.auth-message.success{
+.firebase-auth-message.success{
   display:block!important;
-  background:#eef9f1;
-  color:#31704a;
+  background:#eef8f1;
+  color:#2f7549;
 }
-.auth-note{
-  margin-top:15px;
-  color:#9aa3b1;
+.firebase-auth-footer{
+  margin-top:17px;
+  color:#9aa5b4;
   font-size:8px;
   text-align:center;
 }
-.auth-logout{
-  border:1px solid var(--line);
-  background:#fff;
-  color:#56657a;
+.firebase-auth-logout{
+  border:1px solid rgba(255,255,255,.30);
   border-radius:8px;
   padding:6px 9px;
+  background:rgba(255,255,255,.10);
+  color:#fff;
   font-size:8px;
   font-weight:850;
+  cursor:pointer;
 }
-.auth-logout:hover{border-color:#bac9e2;color:#255bbd}
+.firebase-auth-logout:hover{background:rgba(255,255,255,.17)}
 
 @media(max-width:700px){
-  .auth-gate{
+  .firebase-auth-gate{
     align-items:flex-end;
     padding:8px;
   }
-  .auth-card{
-    width:100%;
-    padding:19px 16px 17px;
-    border-radius:18px 18px 12px 12px;
+  .firebase-auth-card{
+    padding:21px 17px 18px;
+    border-radius:19px 19px 12px 12px;
   }
-  .auth-card h1{font-size:20px}
+  .firebase-auth-card h1{font-size:21px}
+  .firebase-auth-logo{
+    width:43px;
+    height:43px;
+    margin-bottom:14px;
+  }
 }
 
 </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-<div id="authGate" class="auth-gate">
-  <div class="auth-card">
-    <div class="auth-brand">Planning Tridel</div>
-    <h1>Connexion</h1>
-    <p id="authIntro">Utilise ton adresse professionnelle <strong>@tridelsa.ch</strong>.</p>
+<div id="firebaseAuthGate" class="firebase-auth-gate">
+  <div class="firebase-auth-card">
+    <div class="firebase-auth-logo">TR</div>
 
-    <div id="authEmailStep">
-      <label class="auth-label" for="authEmail">Adresse e-mail</label>
-      <input id="authEmail" class="auth-input" type="email" autocomplete="email"
-             placeholder="prenom.nom@tridelsa.ch">
-      <button id="authSendCode" class="auth-primary" type="button">Recevoir un code</button>
+    <div id="firebaseAuthNormal">
+      <div class="firebase-auth-eyebrow">Planning Tridel</div>
+      <h1>Connexion</h1>
+      <p>Entre ton adresse professionnelle TRIDEL. Un lien de connexion sécurisé te sera envoyé par e-mail.</p>
+
+      <label for="firebaseAuthEmail">Adresse e-mail</label>
+      <input
+        id="firebaseAuthEmail"
+        class="firebase-auth-input"
+        type="email"
+        inputmode="email"
+        autocomplete="email"
+        placeholder="prenom.nom@tridelsa.ch"
+      >
+
+      <button id="firebaseAuthSend" class="firebase-auth-primary" type="button">
+        Recevoir le lien de connexion
+      </button>
     </div>
 
-    <div id="authCodeStep" class="hidden">
-      <div class="auth-sent">
-        Code envoyé à <strong id="authEmailDisplay"></strong>
-      </div>
-      <label class="auth-label" for="authCode">Code reçu par e-mail</label>
-      <input id="authCode" class="auth-input auth-code-input" type="text"
-             inputmode="numeric" autocomplete="one-time-code"
-             maxlength="8" placeholder="000000">
-      <button id="authVerifyCode" class="auth-primary" type="button">Se connecter</button>
-      <button id="authChangeEmail" class="auth-secondary" type="button">Changer d’adresse</button>
+    <div id="firebaseAuthSent" class="hidden">
+      <div class="firebase-auth-success-icon">✓</div>
+      <h1>Vérifie tes e-mails</h1>
+      <p>
+        Un lien de connexion a été envoyé à
+        <strong id="firebaseAuthSentEmail"></strong>.
+      </p>
+      <p class="firebase-auth-small">
+        Clique simplement sur le lien reçu pour ouvrir le planning.
+      </p>
+      <button id="firebaseAuthChange" class="firebase-auth-secondary" type="button">
+        Utiliser une autre adresse
+      </button>
     </div>
 
-    <div id="authMessage" class="auth-message hidden"></div>
-    <div class="auth-note">Accès réservé aux adresses professionnelles TRIDEL.</div>
+    <div id="firebaseAuthConfirm" class="hidden">
+      <div class="firebase-auth-eyebrow">Vérification</div>
+      <h1>Confirme ton adresse</h1>
+      <p>
+        Tu as ouvert le lien sur un autre navigateur ou appareil.
+        Entre l’adresse à laquelle le lien a été envoyé.
+      </p>
+
+      <label for="firebaseAuthConfirmEmail">Adresse e-mail</label>
+      <input
+        id="firebaseAuthConfirmEmail"
+        class="firebase-auth-input"
+        type="email"
+        inputmode="email"
+        autocomplete="email"
+        placeholder="prenom.nom@tridelsa.ch"
+      >
+
+      <button id="firebaseAuthConfirmButton" class="firebase-auth-primary" type="button">
+        Continuer
+      </button>
+    </div>
+
+    <div id="firebaseAuthMessage" class="firebase-auth-message hidden"></div>
+
+    <div class="firebase-auth-footer">
+      Accès réservé aux adresses <strong>@tridelsa.ch</strong>
+    </div>
   </div>
 </div>
 
@@ -1581,7 +1650,7 @@ body.view-year .stat-card small{
       </div>
     </div>
   
-<button id="authLogout" class="auth-logout hidden" type="button">Déconnexion</button>
+<button id="firebaseAuthLogout" class="firebase-auth-logout hidden" type="button">Déconnexion</button>
 </header>
 
   <section class="card controls">
@@ -1680,217 +1749,6 @@ body.view-year .stat-card small{
 </div>
 
 <script>
-/* =========================================================
-   AUTHENTIFICATION SUPABASE
-   CONFIGURATION
-   Remplace uniquement les 2 valeurs ci-dessous :
-   - SUPABASE_URL = NEXT_PUBLIC_SUPABASE_URL
-   - SUPABASE_PUBLISHABLE_KEY = NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-   ========================================================= */
-const SUPABASE_URL='https://alyqpviqenfnlbjkhsft.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY='sb_publishable_6Yv6V4Ava_Szo-k5KHw0Lg_-Jcwnwpn';
-const ALLOWED_EMAIL_DOMAIN='tridelsa.ch';
-
-const authConfigured=
-  SUPABASE_URL.startsWith('https://') &&
-  !SUPABASE_URL.includes('COLLE_ICI') &&
-  !SUPABASE_PUBLISHABLE_KEY.includes('COLLE_ICI');
-
-const supabaseClient=authConfigured
-  ? window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{
-      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
-    })
-  : null;
-
-let authPendingEmail='';
-
-function normalizeAuthEmail(value){
-  return String(value||'').trim().toLocaleLowerCase('fr');
-}
-
-function isAllowedTridelEmail(email){
-  const normalized=normalizeAuthEmail(email);
-  return normalized.endsWith('@'+ALLOWED_EMAIL_DOMAIN) &&
-         normalized.split('@').length===2 &&
-         normalized.indexOf('@')>0;
-}
-
-function authSetMessage(message,type='error'){
-  const el=document.getElementById('authMessage');
-  if(!el)return;
-  if(!message){
-    el.textContent='';
-    el.className='auth-message hidden';
-    return;
-  }
-  el.textContent=message;
-  el.className=`auth-message ${type}`;
-}
-
-function authSetBusy(button,busy,label){
-  if(!button)return;
-  button.disabled=busy;
-  if(label)button.textContent=label;
-}
-
-function authShowEmailStep(){
-  document.getElementById('authEmailStep')?.classList.remove('hidden');
-  document.getElementById('authCodeStep')?.classList.add('hidden');
-  authSetMessage('');
-}
-
-function authShowCodeStep(email){
-  document.getElementById('authEmailStep')?.classList.add('hidden');
-  document.getElementById('authCodeStep')?.classList.remove('hidden');
-  const display=document.getElementById('authEmailDisplay');
-  if(display)display.textContent=email;
-  document.getElementById('authCode')?.focus();
-}
-
-function authUnlock(){
-  document.getElementById('authGate')?.classList.add('hidden');
-  document.getElementById('authLogout')?.classList.remove('hidden');
-}
-
-function authLock(){
-  document.getElementById('authGate')?.classList.remove('hidden');
-  document.getElementById('authLogout')?.classList.add('hidden');
-  authShowEmailStep();
-}
-
-async function authSendOtp(){
-  if(!authConfigured){
-    authSetMessage('Supabase n’est pas encore configuré dans index.html.');
-    return;
-  }
-
-  const email=normalizeAuthEmail(document.getElementById('authEmail')?.value);
-
-  if(!isAllowedTridelEmail(email)){
-    authSetMessage(`Seules les adresses @${ALLOWED_EMAIL_DOMAIN} sont autorisées.`);
-    return;
-  }
-
-  const button=document.getElementById('authSendCode');
-  authSetBusy(button,true,'Envoi…');
-  authSetMessage('');
-
-  try{
-    const {error}=await supabaseClient.auth.signInWithOtp({
-      email,
-      options:{shouldCreateUser:true}
-    });
-    if(error)throw error;
-
-    authPendingEmail=email;
-    authShowCodeStep(email);
-    authSetMessage('Code envoyé. Vérifie ta boîte e-mail.','success');
-  }catch(error){
-    console.error(error);
-    authSetMessage(error?.message || 'Impossible d’envoyer le code.');
-  }finally{
-    authSetBusy(button,false,'Recevoir un code');
-  }
-}
-
-async function authVerifyOtp(){
-  if(!authConfigured)return;
-
-  const code=String(document.getElementById('authCode')?.value||'').trim();
-  if(!/^\d{6,8}$/.test(code)){
-    authSetMessage('Entre le code reçu par e-mail.');
-    return;
-  }
-
-  if(!isAllowedTridelEmail(authPendingEmail)){
-    authSetMessage('Adresse e-mail non autorisée.');
-    return;
-  }
-
-  const button=document.getElementById('authVerifyCode');
-  authSetBusy(button,true,'Vérification…');
-  authSetMessage('');
-
-  try{
-    const {data,error}=await supabaseClient.auth.verifyOtp({
-      email:authPendingEmail,
-      token:code,
-      type:'email'
-    });
-    if(error)throw error;
-
-    const sessionEmail=normalizeAuthEmail(data?.user?.email);
-    if(!isAllowedTridelEmail(sessionEmail)){
-      await supabaseClient.auth.signOut();
-      throw new Error('Ce compte n’appartient pas au domaine TRIDEL.');
-    }
-
-    authUnlock();
-  }catch(error){
-    console.error(error);
-    authSetMessage(error?.message || 'Code incorrect ou expiré.');
-  }finally{
-    authSetBusy(button,false,'Se connecter');
-  }
-}
-
-async function authLogout(){
-  if(supabaseClient)await supabaseClient.auth.signOut();
-  authPendingEmail='';
-  authLock();
-}
-
-async function initializeAuthGate(){
-  if(!authConfigured){
-    authLock();
-    authSetMessage(
-      'Configuration Supabase manquante : renseigne SUPABASE_URL et SUPABASE_PUBLISHABLE_KEY dans index.html.'
-    );
-    return;
-  }
-
-  const {data:{session}}=await supabaseClient.auth.getSession();
-  const email=normalizeAuthEmail(session?.user?.email);
-
-  if(session && isAllowedTridelEmail(email)){
-    authUnlock();
-  }else{
-    if(session)await supabaseClient.auth.signOut();
-    authLock();
-  }
-
-  supabaseClient.auth.onAuthStateChange(async(_event,nextSession)=>{
-    const nextEmail=normalizeAuthEmail(nextSession?.user?.email);
-    if(nextSession && isAllowedTridelEmail(nextEmail)){
-      authUnlock();
-    }else{
-      authLock();
-    }
-  });
-}
-
-document.addEventListener('DOMContentLoaded',()=>{
-  document.getElementById('authSendCode')?.addEventListener('click',authSendOtp);
-  document.getElementById('authVerifyCode')?.addEventListener('click',authVerifyOtp);
-  document.getElementById('authChangeEmail')?.addEventListener('click',()=>{
-    authPendingEmail='';
-    document.getElementById('authCode').value='';
-    authShowEmailStep();
-  });
-  document.getElementById('authLogout')?.addEventListener('click',authLogout);
-
-  document.getElementById('authEmail')?.addEventListener('keydown',e=>{
-    if(e.key==='Enter')authSendOtp();
-  });
-  document.getElementById('authCode')?.addEventListener('keydown',e=>{
-    if(e.key==='Enter')authVerifyOtp();
-  });
-
-  initializeAuthGate();
-});
-
-
-
 const DATA_FILE='planning.json';
 const DAY_NAMES=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 const MONTH_NAMES=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -2863,5 +2721,220 @@ setInterval(()=>loadPlanning(true),60000);
 
 loadPlanning(false);
 </script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+  sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink,
+  signOut
+} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCVTIr3qwLz6QjCF4l717KK76-h5JydyD4",
+  authDomain: "planning-4c445.firebaseapp.com",
+  projectId: "planning-4c445",
+  storageBucket: "planning-4c445.firebasestorage.app",
+  messagingSenderId: "297291464093",
+  appId: "1:297291464093:web:3a3437fe83bc3648f5c374"
+};
+
+const ALLOWED_EMAIL_DOMAIN = "tridelsa.ch";
+const FIREBASE_EMAIL_STORAGE_KEY = "planningTridelEmailForSignIn";
+
+const firebaseApp = initializeApp(firebaseConfig);
+const firebaseAuth = getAuth(firebaseApp);
+
+const gate = document.getElementById("firebaseAuthGate");
+const normalStep = document.getElementById("firebaseAuthNormal");
+const sentStep = document.getElementById("firebaseAuthSent");
+const confirmStep = document.getElementById("firebaseAuthConfirm");
+const emailInput = document.getElementById("firebaseAuthEmail");
+const confirmEmailInput = document.getElementById("firebaseAuthConfirmEmail");
+const sendButton = document.getElementById("firebaseAuthSend");
+const confirmButton = document.getElementById("firebaseAuthConfirmButton");
+const changeButton = document.getElementById("firebaseAuthChange");
+const sentEmail = document.getElementById("firebaseAuthSentEmail");
+const message = document.getElementById("firebaseAuthMessage");
+const logoutButton = document.getElementById("firebaseAuthLogout");
+
+function normalizeEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function isAllowedEmail(email) {
+  const normalized = normalizeEmail(email);
+  return /^[^@\s]+@tridelsa\.ch$/i.test(normalized);
+}
+
+function showMessage(text, type = "error") {
+  if (!text) {
+    message.textContent = "";
+    message.className = "firebase-auth-message hidden";
+    return;
+  }
+  message.textContent = text;
+  message.className = `firebase-auth-message ${type}`;
+}
+
+function showStep(step) {
+  normalStep.classList.toggle("hidden", step !== "normal");
+  sentStep.classList.toggle("hidden", step !== "sent");
+  confirmStep.classList.toggle("hidden", step !== "confirm");
+  showMessage("");
+}
+
+function unlockPlanning() {
+  gate.classList.add("hidden");
+  logoutButton?.classList.remove("hidden");
+}
+
+function lockPlanning() {
+  gate.classList.remove("hidden");
+  logoutButton?.classList.add("hidden");
+}
+
+function setBusy(button, busy, busyText, normalText) {
+  if (!button) return;
+  button.disabled = busy;
+  button.textContent = busy ? busyText : normalText;
+}
+
+function friendlyFirebaseError(error) {
+  const code = error?.code || "";
+  if (code === "auth/invalid-email") return "Adresse e-mail invalide.";
+  if (code === "auth/too-many-requests") return "Trop de demandes. Réessaie dans quelques minutes.";
+  if (code === "auth/unauthorized-continue-uri") return "Le domaine du planning n'est pas encore autorisé dans Firebase.";
+  if (code === "auth/invalid-action-code") return "Ce lien de connexion est invalide ou a expiré.";
+  if (code === "auth/expired-action-code") return "Ce lien de connexion a expiré. Demande un nouveau lien.";
+  return error?.message || "Une erreur est survenue.";
+}
+
+async function sendLoginLink() {
+  const email = normalizeEmail(emailInput.value);
+
+  if (!isAllowedEmail(email)) {
+    showMessage("Seules les adresses @tridelsa.ch sont autorisées.");
+    return;
+  }
+
+  setBusy(sendButton, true, "Envoi…", "Recevoir le lien de connexion");
+
+  try {
+    const actionCodeSettings = {
+      url: `${window.location.origin}${window.location.pathname}`,
+      handleCodeInApp: true
+    };
+
+    await sendSignInLinkToEmail(firebaseAuth, email, actionCodeSettings);
+
+    window.localStorage.setItem(FIREBASE_EMAIL_STORAGE_KEY, email);
+    sentEmail.textContent = email;
+    showStep("sent");
+  } catch (error) {
+    console.error("Firebase sendSignInLinkToEmail:", error);
+    showMessage(friendlyFirebaseError(error));
+  } finally {
+    setBusy(sendButton, false, "Envoi…", "Recevoir le lien de connexion");
+  }
+}
+
+async function completeEmailLinkSignIn(email) {
+  const normalized = normalizeEmail(email);
+
+  if (!isAllowedEmail(normalized)) {
+    showMessage("Cette adresse n'appartient pas au domaine @tridelsa.ch.");
+    return;
+  }
+
+  setBusy(confirmButton, true, "Connexion…", "Continuer");
+
+  try {
+    const result = await signInWithEmailLink(firebaseAuth, normalized, window.location.href);
+
+    if (!isAllowedEmail(result.user?.email)) {
+      await signOut(firebaseAuth);
+      throw new Error("Adresse e-mail non autorisée.");
+    }
+
+    window.localStorage.removeItem(FIREBASE_EMAIL_STORAGE_KEY);
+
+    // Nettoie l'URL après consommation du lien Firebase.
+    window.history.replaceState({}, document.title, `${window.location.origin}${window.location.pathname}`);
+
+    unlockPlanning();
+  } catch (error) {
+    console.error("Firebase signInWithEmailLink:", error);
+    showMessage(friendlyFirebaseError(error));
+  } finally {
+    setBusy(confirmButton, false, "Connexion…", "Continuer");
+  }
+}
+
+async function handleIncomingEmailLink() {
+  if (!isSignInWithEmailLink(firebaseAuth, window.location.href)) return false;
+
+  lockPlanning();
+
+  const storedEmail = normalizeEmail(
+    window.localStorage.getItem(FIREBASE_EMAIL_STORAGE_KEY)
+  );
+
+  if (storedEmail && isAllowedEmail(storedEmail)) {
+    await completeEmailLinkSignIn(storedEmail);
+    return true;
+  }
+
+  showStep("confirm");
+  confirmEmailInput.focus();
+  return true;
+}
+
+sendButton.addEventListener("click", sendLoginLink);
+emailInput.addEventListener("keydown", event => {
+  if (event.key === "Enter") sendLoginLink();
+});
+
+changeButton.addEventListener("click", () => {
+  showStep("normal");
+  emailInput.focus();
+});
+
+confirmButton.addEventListener("click", () => {
+  completeEmailLinkSignIn(confirmEmailInput.value);
+});
+confirmEmailInput.addEventListener("keydown", event => {
+  if (event.key === "Enter") completeEmailLinkSignIn(confirmEmailInput.value);
+});
+
+logoutButton?.addEventListener("click", async () => {
+  try {
+    await signOut(firebaseAuth);
+  } finally {
+    window.localStorage.removeItem(FIREBASE_EMAIL_STORAGE_KEY);
+    lockPlanning();
+    showStep("normal");
+  }
+});
+
+onAuthStateChanged(firebaseAuth, async user => {
+  // Si on est en train de consommer un lien, handleIncomingEmailLink gère le flux.
+  if (isSignInWithEmailLink(firebaseAuth, window.location.href)) return;
+
+  if (user && isAllowedEmail(user.email)) {
+    unlockPlanning();
+  } else {
+    if (user) await signOut(firebaseAuth);
+    lockPlanning();
+    showStep("normal");
+  }
+});
+
+handleIncomingEmailLink();
+</script>
+
 </body>
 </html>
