@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Planning Tridel</title>
-<meta name="app-version" content="15.6">
+<meta name="app-version" content="15.8">
 <style>
 :root{
   --bg:#f3f6fa;--card:#fff;--navy:#17345f;--blue:#2667f5;--text:#172033;
@@ -2255,6 +2255,230 @@ function commentCategory(text){
   return 'comment';
 }
 
+
+function normalizeEventText(value){
+  return String(value||'')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+
+function parseClockToken(token){
+  const m=String(token||'').match(/\b([01]?\d|2[0-3])\s*(?:[:hH.]\s*([0-5]\d))?\b/);
+  if(!m)return null;
+  return {hour:Number(m[1]),minute:Number(m[2]||0)};
+}
+
+function extractAppointmentTimes(text){
+  const value=normalizeEventText(text);
+
+  // Formats gérés : 8h, 8h30, 08:30, 08.30, 8h30-9h15, 08:30 à 09:15
+  const range=value.match(/\b([01]?\d|2[0-3])\s*(?:[:hH.]\s*([0-5]\d))?\s*(?:-|–|—|à|a)\s*([01]?\d|2[0-3])\s*(?:[:hH.]\s*([0-5]\d))?\b/i);
+  if(range){
+    return {
+      start:{hour:Number(range[1]),minute:Number(range[2]||0)},
+      end:{hour:Number(range[3]),minute:Number(range[4]||0)}
+    };
+  }
+
+  const single=value.match(/\b(?:à\s*)?([01]?\d|2[0-3])\s*(?:[:hH.]\s*([0-5]\d))\b/i)
+    || value.match(/\b(?:à\s*)?([01]?\d|2[0-3])\s*[hH]\b/i);
+
+  if(single){
+    const start={hour:Number(single[1]),minute:Number(single[2]||0)};
+    const startMinutes=start.hour*60+start.minute;
+    const endMinutes=startMinutes+60; // 1 h par défaut si aucune durée n'est indiquée.
+    return {
+      start,
+      end:{hour:Math.floor((endMinutes%1440)/60),minute:endMinutes%60},
+      rollsToNextDay:endMinutes>=1440
+    };
+  }
+
+  return null;
+}
+
+function extractAddressFromComment(text){
+  const value=normalizeEventText(text);
+
+  // Priorité aux mentions explicites.
+  const explicit=value.match(/\b(?:adresse|lieu)\s*[:\-]\s*(.+)$/i);
+  if(explicit)return explicit[1].trim();
+
+  // Adresse suisse classique avec NPA + localité, éventuellement précédée d'une rue.
+  const swiss=value.match(/((?:rue|route|avenue|av\.?|chemin|ch\.?|place|pl\.?|boulevard|bd\.?|quai|impasse|all[eé]e)\s+[^,;|]+?(?:\s+\d+[a-zA-Z]?)?(?:,\s*|\s+)\d{4}\s+[A-Za-zÀ-ÿ'’\-\s]+)/i);
+  if(swiss)return swiss[1].trim();
+
+  // Au minimum, récupère un NPA + localité si présent.
+  const city=value.match(/\b(\d{4}\s+[A-Za-zÀ-ÿ'’\-]+(?:\s+[A-Za-zÀ-ÿ'’\-]+){0,3})\b/);
+  return city ? city[1].trim() : '';
+}
+
+function removeEmployeePrefix(text,employee){
+  let value=normalizeEventText(text);
+  const employeeName=cleanEmployeeName(employee?.name||'');
+  const parts=employeeName.split(/\s+/).filter(Boolean);
+
+  // Enlève en début de commentaire un prénom/nom ou un nom d'employé connu,
+  // sans toucher au reste du texte.
+  const candidates=[employeeName,...parts]
+    .filter(Boolean)
+    .sort((a,b)=>b.length-a.length);
+
+  for(const candidate of candidates){
+    const escaped=candidate.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    value=value.replace(new RegExp(`^${escaped}\\s*[-–—,:;]*\\s*`,'i'),'');
+  }
+
+  // Cas fréquent : "Prénom Nom - Visite médicale..." alors que la liste ne contient que le nom.
+  value=value.replace(/^[A-Za-zÀ-ÿ'’\-]+\s+[A-Za-zÀ-ÿ'’\-]+\s*[-–—,:;]\s*(?=visite|médecin|medecin|unisant[eé])/i,'');
+
+  return value.trim();
+}
+
+function medicalEventFromComment(text,eventDate,employee){
+  const cleaned=removeEmployeePrefix(text,employee);
+  const times=extractAppointmentTimes(cleaned);
+  const location=extractAddressFromComment(cleaned);
+
+  const startDate=new Date(eventDate);
+  let endDate=null;
+
+  if(times){
+    startDate.setHours(times.start.hour,times.start.minute,0,0);
+    endDate=new Date(eventDate);
+    if(times.rollsToNextDay)endDate.setDate(endDate.getDate()+1);
+    endDate.setHours(times.end.hour,times.end.minute,0,0);
+  }
+
+  const info=[];
+  if(times){
+    info.push(
+      startDate.toLocaleTimeString('fr-CH',{hour:'2-digit',minute:'2-digit'})
+    );
+  }
+  if(location)info.push(location);
+
+  return {
+    type:'medical',
+    date:startDate,
+    endDate:endDate,
+    allDay:!times,
+    title:'Visite médicale Unisanté',
+    detail:info.join(' · ') || 'Visite médicale Unisanté',
+    location,
+    originalDetail:cleaned
+  };
+}
+
+
+function stripDetectedTimeAndLocation(text, detectedLocation){
+  let value=normalizeEventText(text);
+
+  // Supprime les heures/horaires du titre potentiel.
+  value=value
+    .replace(/\b([01]?\d|2[0-3])\s*(?:[:hH.]\s*([0-5]\d))?\s*(?:-|–|—|à|a)\s*([01]?\d|2[0-3])\s*(?:[:hH.]\s*([0-5]\d))?\b/gi,' ')
+    .replace(/\b(?:à\s*)?([01]?\d|2[0-3])\s*(?:[:hH.]\s*([0-5]\d))\b/gi,' ')
+    .replace(/\b(?:à\s*)?([01]?\d|2[0-3])\s*[hH]\b/gi,' ');
+
+  if(detectedLocation){
+    const escaped=detectedLocation.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    value=value.replace(new RegExp(escaped,'i'),' ');
+  }
+
+  return value
+    .replace(/\s*[-–—,:;|]\s*/g,' ')
+    .replace(/\s+/g,' ')
+    .trim();
+}
+
+function inferGenericEventTitle(rawText,fallbackTitle){
+  const location=extractAddressFromComment(rawText);
+  let cleaned=stripDetectedTimeAndLocation(rawText,location);
+
+  // Nettoyage de préfixes fréquents.
+  cleaned=cleaned
+    .replace(/^(formation|formation externe)\s*[:\-–—]?\s*/i,'Formation ')
+    .replace(/^(rdv|rendez[- ]?vous)\s*[:\-–—]?\s*/i,'')
+    .trim();
+
+  if(!cleaned)return fallbackTitle;
+
+  // Évite les titres trop longs : garde une version courte mais parlante.
+  const words=cleaned.split(/\s+/);
+  if(words.length>8){
+    cleaned=words.slice(0,8).join(' ');
+  }
+
+  return cleaned || fallbackTitle;
+}
+
+function enrichEventForCalendar(ev){
+  const sourceText=normalizeEventText(
+    ev.originalDetail ||
+    ev.detail ||
+    ev.title ||
+    ''
+  );
+
+  const times=extractAppointmentTimes(sourceText);
+  const location=ev.location || extractAddressFromComment(sourceText);
+
+  let start=new Date(ev.date);
+  let end=ev.endDate ? new Date(ev.endDate) : null;
+  let allDay=ev.allDay;
+
+  // Si l'événement n'a pas déjà une heure explicite mais que le texte en contient une,
+  // on transforme automatiquement l'événement "journée entière" en rendez-vous horaire.
+  const alreadyTimed=
+    start.getHours()!==0 ||
+    start.getMinutes()!==0 ||
+    allDay===false;
+
+  if(!alreadyTimed && times){
+    start=new Date(ev.date);
+    start.setHours(times.start.hour,times.start.minute,0,0);
+
+    end=new Date(ev.date);
+    if(times.rollsToNextDay)end.setDate(end.getDate()+1);
+    end.setHours(times.end.hour,times.end.minute,0,0);
+
+    allDay=false;
+  }
+
+  if(allDay===undefined){
+    allDay=!(
+      start.getHours()!==0 ||
+      start.getMinutes()!==0
+    );
+  }
+
+  if(allDay===false && !end){
+    end=new Date(start.getTime()+60*60*1000);
+  }
+
+  let title=ev.title;
+
+  // Pour les formations et commentaires, fabrique un titre plus utile à partir du texte.
+  if(ev.type==='training' || ev.type==='comment'){
+    title=inferGenericEventTitle(sourceText,ev.title);
+  }
+
+  // Les visites médicales restent normalisées.
+  if(ev.type==='medical'){
+    title='Visite médicale Unisanté';
+  }
+
+  return {
+    ...ev,
+    date:start,
+    endDate:end,
+    allDay,
+    location,
+    title,
+    originalDetail:sourceText || ev.originalDetail || ev.detail || ''
+  };
+}
+
 function buildUpcomingEvents(employee){
   const start=new Date();
   start.setHours(0,0,0,0);
@@ -2427,8 +2651,8 @@ function buildUpcomingEvents(employee){
 
   // COMMENTAIRES IMPORTANTS
   Object.entries(comments).forEach(([dateISO,rawText])=>{
-    const text=String(rawText||'').trim();
-    if(!text)return;
+    const raw=String(rawText||'').trim();
+    if(!raw)return;
 
     // Si la date est déjà codée FE, l'événement "Formation externe"
     // affiche déjà ce commentaire comme détail : aucun doublon.
@@ -2439,7 +2663,7 @@ function buildUpcomingEvents(employee){
 
     if(eventDate<start || eventDate>end)return;
 
-    const normalized=text
+    const normalized=raw
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g,'')
       .toLocaleLowerCase('fr');
@@ -2447,35 +2671,69 @@ function buildUpcomingEvents(employee){
     const hasFormation=normalized.includes('formation');
     const hasMedical=
       normalized.includes('medecin du travail') ||
-      normalized.includes('medecin travail');
+      normalized.includes('medecin travail') ||
+      normalized.includes('visite medicale') ||
+      normalized.includes('unisant');
 
     if(hasFormation){
+      const times=extractAppointmentTimes(raw);
+      const location=extractAddressFromComment(raw);
+      const trainingDate=new Date(eventDate);
+      let trainingEnd=null;
+
+      if(times){
+        trainingDate.setHours(times.start.hour,times.start.minute,0,0);
+        trainingEnd=new Date(eventDate);
+        if(times.rollsToNextDay)trainingEnd.setDate(trainingEnd.getDate()+1);
+        trainingEnd.setHours(times.end.hour,times.end.minute,0,0);
+      }
+
+      const trainingTitle=inferGenericEventTitle(raw,'Formation');
+
       pushUnique({
         type:'training',
-        date:new Date(eventDate),
-        title:`Formation — ${formatLongDate(eventDate)}`,
-        detail:text
+        date:trainingDate,
+        endDate:trainingEnd,
+        allDay:!times,
+        title:trainingTitle,
+        detail:[
+          times ? trainingDate.toLocaleTimeString('fr-CH',{hour:'2-digit',minute:'2-digit'}) : '',
+          location
+        ].filter(Boolean).join(' · ') || raw,
+        location,
+        originalDetail:raw
       },`formation-${dateISO}`);
     }
 
     if(hasMedical){
-      pushUnique({
-        type:'medical',
-        date:new Date(eventDate),
-        title:`Médecin du travail — ${formatLongDate(eventDate)}`,
-        detail:text
-      },`medical-${dateISO}`);
+      pushUnique(
+        medicalEventFromComment(raw,eventDate,employee),
+        `medical-${dateISO}`
+      );
     }
 
-    // Tous les autres commentaires sont aussi des événements.
-    // On garde les formats spécifiques Formation / Médecin du travail ci-dessus.
     if(!hasFormation && !hasMedical){
+      const times=extractAppointmentTimes(raw);
+      const location=extractAddressFromComment(raw);
+      const commentDate=new Date(eventDate);
+      let commentEnd=null;
+
+      if(times){
+        commentDate.setHours(times.start.hour,times.start.minute,0,0);
+        commentEnd=new Date(eventDate);
+        if(times.rollsToNextDay)commentEnd.setDate(commentEnd.getDate()+1);
+        commentEnd.setHours(times.end.hour,times.end.minute,0,0);
+      }
+
       pushUnique({
         type:'comment',
-        date:new Date(eventDate),
+        date:commentDate,
+        endDate:commentEnd,
+        allDay:!times,
         title:`${formatLongDate(eventDate)}`,
-        detail:text
-      },`comment-${dateISO}-${text}`);
+        detail:raw,
+        location
+      },`comment-${dateISO}-${raw}`);
     }
   });
 
@@ -2488,6 +2746,11 @@ let upcomingCalendarEvents=[];
 function calendarDateOnly(date){
   const d=new Date(date);
   return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function calendarLocalDateTime(date){
+  const d=new Date(date);
+  return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}T${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}00`;
 }
 
 function nextCalendarDay(date){
@@ -2505,23 +2768,41 @@ function escapeICS(value){
 }
 
 function calendarEventData(ev){
-  const start=new Date(ev.date);
-  start.setHours(0,0,0,0);
-
-  const inclusiveEnd=ev.endDate ? new Date(ev.endDate) : new Date(start);
-  inclusiveEnd.setHours(0,0,0,0);
-
-  // En iCalendar, la date de fin d'un événement "journée entière" est exclusive.
-  const exclusiveEnd=nextCalendarDay(inclusiveEnd);
+  const intelligentEvent=enrichEventForCalendar(ev);
   const employee=selectedEmployee();
   const employeeName=employee ? cleanEmployeeName(employee.name) : '';
 
+  if(intelligentEvent.allDay===false || (intelligentEvent.date && (intelligentEvent.date.getHours()!==0 || intelligentEvent.date.getMinutes()!==0))){
+    const start=new Date(intelligentEvent.date);
+    const end=intelligentEvent.endDate ? new Date(intelligentEvent.endDate) : new Date(start.getTime()+60*60*1000);
+
+    return {
+      title:intelligentEvent.title,
+      start,
+      end,
+      allDay:false,
+      location:intelligentEvent.location||'',
+      description:[
+        intelligentEvent.originalDetail || intelligentEvent.detail,
+        employeeName ? `Planning Tridel — ${employeeName}` : 'Planning Tridel'
+      ].filter(Boolean).join('\n')
+    };
+  }
+
+  const start=new Date(intelligentEvent.date);
+  start.setHours(0,0,0,0);
+
+  const inclusiveEnd=intelligentEvent.endDate ? new Date(intelligentEvent.endDate) : new Date(start);
+  inclusiveEnd.setHours(0,0,0,0);
+
   return {
-    title:ev.title,
+    title:intelligentEvent.title,
     start,
-    exclusiveEnd,
+    end:nextCalendarDay(inclusiveEnd),
+    allDay:true,
+    location:intelligentEvent.location||'',
     description:[
-      ev.detail,
+      intelligentEvent.originalDetail || intelligentEvent.detail,
       employeeName ? `Planning Tridel — ${employeeName}` : 'Planning Tridel'
     ].filter(Boolean).join('\n')
   };
@@ -2532,6 +2813,16 @@ function downloadCalendarICS(ev){
   const uid=`planning-tridel-${Date.now()}-${Math.random().toString(36).slice(2)}@tridelsa.ch`;
   const stamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z');
 
+  const dateLines=data.allDay
+    ? [
+        `DTSTART;VALUE=DATE:${calendarDateOnly(data.start)}`,
+        `DTEND;VALUE=DATE:${calendarDateOnly(data.end)}`
+      ]
+    : [
+        `DTSTART;TZID=Europe/Zurich:${calendarLocalDateTime(data.start)}`,
+        `DTEND;TZID=Europe/Zurich:${calendarLocalDateTime(data.end)}`
+      ];
+
   const ics=[
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
@@ -2541,15 +2832,15 @@ function downloadCalendarICS(ev){
     'BEGIN:VEVENT',
     `UID:${uid}`,
     `DTSTAMP:${stamp}`,
-    `DTSTART;VALUE=DATE:${calendarDateOnly(data.start)}`,
-    `DTEND;VALUE=DATE:${calendarDateOnly(data.exclusiveEnd)}`,
+    ...dateLines,
     `SUMMARY:${escapeICS(data.title)}`,
+    data.location ? `LOCATION:${escapeICS(data.location)}` : '',
     `DESCRIPTION:${escapeICS(data.description)}`,
     'STATUS:CONFIRMED',
     'TRANSP:TRANSPARENT',
     'END:VEVENT',
     'END:VCALENDAR'
-  ].join('\r\n');
+  ].filter(Boolean).join('\r\n');
 
   const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});
   const url=URL.createObjectURL(blob);
@@ -2570,10 +2861,12 @@ function openOutlookCalendar(ev){
     rru:'addevent',
     subject:data.title,
     startdt:data.start.toISOString(),
-    enddt:data.exclusiveEnd.toISOString(),
+    enddt:data.end.toISOString(),
     body:data.description,
-    allday:'true'
+    allday:data.allDay?'true':'false'
   });
+
+  if(data.location)params.set('location',data.location);
 
   window.open(
     `https://outlook.office.com/calendar/0/deeplink/compose?${params.toString()}`,
@@ -2591,8 +2884,6 @@ function addUpcomingEventToCalendar(index){
   const ev=upcomingCalendarEvents[index];
   if(!ev)return;
 
-  // Téléphone / tablette : fichier calendrier -> calendrier natif.
-  // Ordinateur : fiche Outlook déjà remplie.
   if(isMobileCalendarDevice()){
     downloadCalendarICS(ev);
   }else{
@@ -2609,7 +2900,6 @@ function renderUpcomingEvents(employee){
   const events=buildUpcomingEvents(employee);
   upcomingCalendarEvents=events;
 
-  // Le bloc reste visible même s'il n'y a rien, mais très discret
   card.classList.remove('hidden');
   count.textContent=events.length||'';
 
