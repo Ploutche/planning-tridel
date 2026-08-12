@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Planning Tridel</title>
-<meta name="app-version" content="15.5">
+<meta name="app-version" content="15.6">
 <style>
 :root{
   --bg:#f3f6fa;--card:#fff;--navy:#17345f;--blue:#2667f5;--text:#172033;
@@ -3222,8 +3222,14 @@ async function sendLoginLink() {
   setBusy(sendButton, true, "Envoi…", "Recevoir le lien de connexion");
 
   try {
+    // On transporte l'adresse saisie dans l'URL de retour.
+    // Ainsi, même si le lien est ouvert dans un autre navigateur/appareil,
+    // Firebase peut terminer la connexion sans redemander l'adresse.
+    const returnUrl = new URL(`${window.location.origin}${window.location.pathname}`);
+    returnUrl.searchParams.set("tridelEmail", email);
+
     const actionCodeSettings = {
-      url: `${window.location.origin}${window.location.pathname}`,
+      url: returnUrl.toString(),
       handleCodeInApp: true
     };
 
@@ -3277,12 +3283,20 @@ async function handleIncomingEmailLink() {
 
   lockPlanning();
 
+  const currentUrl = new URL(window.location.href);
+  const emailFromLink = normalizeEmail(currentUrl.searchParams.get("tridelEmail") || "");
   const storedEmail = normalizeEmail(
     window.localStorage.getItem(FIREBASE_EMAIL_STORAGE_KEY)
   );
 
-  if (storedEmail && isAllowedEmail(storedEmail)) {
-    await completeEmailLinkSignIn(storedEmail);
+  // Priorité à l'adresse embarquée dans le lien, puis au stockage local.
+  // Le formulaire de confirmation ne sert plus que de secours pour les anciens liens.
+  const signInEmail = isAllowedEmail(emailFromLink)
+    ? emailFromLink
+    : (isAllowedEmail(storedEmail) ? storedEmail : "");
+
+  if (signInEmail) {
+    await completeEmailLinkSignIn(signInEmail);
     return true;
   }
 
