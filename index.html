@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Planning Tridel</title>
-<meta name="app-version" content="15.4">
+<meta name="app-version" content="15.5">
 <style>
 :root{
   --bg:#f3f6fa;--card:#fff;--navy:#17345f;--blue:#2667f5;--text:#172033;
@@ -1887,6 +1887,7 @@ const LEGEND_ORDER=[
   'RM','RA','RN','PIQ','R','VA','VJ','HOR','HSR','FE','PC','PI','EM','RF','PO','CA','GR','EN','MI','AN','AP','PR','MS','MC'
 ];
 const OFFICIAL_CODES=new Set(LEGEND_ORDER);
+const AUTHENTICATED_EMAIL_KEY='planningTridelAuthenticatedEmail';
 
 const ABSENCE_CODES=['VA','VJ','FE','HOR','HSR','PC','PI','EM','MI','AN','AP','PR','MS','MC'];
 
@@ -2129,11 +2130,21 @@ async function loadPlanning(preserve=true){
 
 function initializeState(preferredId){
   state.date=new Date();
-  state.employeeId=planning.employees.some(e=>e.id===preferredId)
-    ? preferredId
-    : planning.employees.some(e=>e.id===localStorage.getItem('planningEmployee'))
-      ? localStorage.getItem('planningEmployee')
-      : planning.employees[0].id;
+
+  const authenticatedEmail=localStorage.getItem(AUTHENTICATED_EMAIL_KEY);
+  const matchedEmployee=bestEmployeeForEmail(authenticatedEmail);
+
+  state.employeeId=matchedEmployee
+    ? matchedEmployee.id
+    : planning.employees.some(e=>e.id===preferredId)
+      ? preferredId
+      : planning.employees.some(e=>e.id===localStorage.getItem('planningEmployee'))
+        ? localStorage.getItem('planningEmployee')
+        : planning.employees[0].id;
+
+  if(matchedEmployee){
+    localStorage.setItem('planningEmployee',matchedEmployee.id);
+  }
 }
 
 function populateEmployees(filter=''){
@@ -2797,6 +2808,102 @@ function fuzzyEmployeeScore(name,query){
   return 400- Math.max(0,hay.length-needle.length);
 }
 
+function normalizeIdentityPart(value){
+  return String(value||'')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .toLocaleLowerCase('fr')
+    .replace(/[^a-z0-9]+/g,' ')
+    .trim();
+}
+
+function identityTokens(value){
+  return normalizeIdentityPart(value)
+    .split(/\s+/)
+    .filter(token=>token && token.length>=2);
+}
+
+function employeeEmailMatchScore(employeeName,email){
+  const localPart=String(email||'').split('@')[0]||'';
+  const mailTokens=identityTokens(localPart);
+  const nameTokens=identityTokens(cleanEmployeeName(employeeName));
+
+  if(!mailTokens.length || !nameTokens.length)return -1;
+
+  let score=0;
+  let exactMatches=0;
+
+  for(const nameToken of nameTokens){
+    let best=0;
+
+    for(const mailToken of mailTokens){
+      if(nameToken===mailToken){
+        best=Math.max(best,1000 + nameToken.length*12);
+      }else if(mailToken.startsWith(nameToken) || nameToken.startsWith(mailToken)){
+        const minLen=Math.min(nameToken.length,mailToken.length);
+        if(minLen>=4)best=Math.max(best,620 + minLen*8);
+      }else if(mailToken.includes(nameToken) || nameToken.includes(mailToken)){
+        const minLen=Math.min(nameToken.length,mailToken.length);
+        if(minLen>=4)best=Math.max(best,430 + minLen*6);
+      }
+    }
+
+    if(best>=1000)exactMatches++;
+    score+=best;
+  }
+
+  // Plusieurs morceaux du nom retrouvés dans le mail rendent la correspondance très fiable.
+  score+=exactMatches*250;
+
+  // Bonus si le nom complet, sans séparateurs, se retrouve dans la partie locale du mail.
+  const compactMail=normalizeIdentityPart(localPart).replace(/\s+/g,'');
+  const compactName=normalizeIdentityPart(cleanEmployeeName(employeeName)).replace(/\s+/g,'');
+  if(compactName && compactMail.includes(compactName))score+=900;
+
+  return score>0 ? score : -1;
+}
+
+function bestEmployeeForEmail(email){
+  if(!email || !planning.employees.length)return null;
+
+  const ranked=planning.employees
+    .map(employee=>({
+      employee,
+      score:employeeEmailMatchScore(employee.name,email)
+    }))
+    .filter(item=>item.score>=0)
+    .sort((a,b)=>
+      b.score-a.score ||
+      b.employee.name.length-a.employee.name.length ||
+      a.employee.name.localeCompare(b.employee.name,'fr',{sensitivity:'base'})
+    );
+
+  return ranked.length ? ranked[0].employee : null;
+}
+
+function selectEmployeeFromAuthenticatedEmail(email){
+  const normalized=String(email||'').trim().toLowerCase();
+  if(!normalized)return false;
+
+  localStorage.setItem(AUTHENTICATED_EMAIL_KEY,normalized);
+
+  const employee=bestEmployeeForEmail(normalized);
+  if(!employee)return false;
+
+  state.employeeId=employee.id;
+  localStorage.setItem('planningEmployee',employee.id);
+
+  if($('employeePickerName')){
+    updateEmployeePicker();
+  }
+  if($('planningUI') && !$('planningUI').classList.contains('hidden')){
+    render();
+  }
+  return true;
+}
+
+window.selectEmployeeFromAuthenticatedEmail=selectEmployeeFromAuthenticatedEmail;
+
 function codeHTML(code,dateISO,currentId){
   const c=safeCode(code);
   const info=CODE_INFO[c]||[c||'Repos',c?'Code du planning':'Aucun service'];
@@ -3071,7 +3178,14 @@ function showStep(step) {
   showMessage("");
 }
 
-function unlockPlanning() {
+function unlockPlanning(authenticatedEmail = "") {
+  const normalized = normalizeEmail(authenticatedEmail || firebaseAuth.currentUser?.email || "");
+
+  if (normalized) {
+    window.localStorage.setItem("planningTridelAuthenticatedEmail", normalized);
+    window.selectEmployeeFromAuthenticatedEmail?.(normalized);
+  }
+
   gate.classList.add("hidden");
   logoutButton?.classList.remove("hidden");
 }
@@ -3149,7 +3263,7 @@ async function completeEmailLinkSignIn(email) {
     // Nettoie l'URL après consommation du lien Firebase.
     window.history.replaceState({}, document.title, `${window.location.origin}${window.location.pathname}`);
 
-    unlockPlanning();
+    unlockPlanning(result.user?.email || normalized);
   } catch (error) {
     console.error("Firebase signInWithEmailLink:", error);
     showMessage(friendlyFirebaseError(error));
@@ -3199,6 +3313,7 @@ logoutButton?.addEventListener("click", async () => {
     await signOut(firebaseAuth);
   } finally {
     window.localStorage.removeItem(FIREBASE_EMAIL_STORAGE_KEY);
+    window.localStorage.removeItem("planningTridelAuthenticatedEmail");
     lockPlanning();
     showStep("normal");
   }
@@ -3209,7 +3324,7 @@ onAuthStateChanged(firebaseAuth, async user => {
   if (isSignInWithEmailLink(firebaseAuth, window.location.href)) return;
 
   if (user && isAllowedEmail(user.email)) {
-    unlockPlanning();
+    unlockPlanning(user.email);
   } else {
     if (user) await signOut(firebaseAuth);
     lockPlanning();
