@@ -32,6 +32,7 @@
   --c-ca-bg:#FAEACB;--c-ca-ink:#7A5200;
   --c-gr-bg:#E4EDF7;--c-gr-ink:#33526F;
   --c-en-bg:#E6F2E1;--c-en-ink:#3A6A29;
+  --c-r-bg:#DEF5E7;--c-r-ink:#12784A;
   --c-off-bg:#EDF0F5;--c-off-ink:#6C7A90;
   --c-misc-bg:#EDF0F5;--c-misc-ink:#4E5C70;
 
@@ -179,24 +180,19 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{
 .employee-results-empty{padding:16px 8px;text-align:center;color:var(--muted);font-size:11px}
 
 /* ==========================================================
-   Rotation en cours / suivante — élément signature
+   Rotation en cours / suivante — repère discret
    ========================================================== */
-.rotation-card{display:none;padding:0;overflow:hidden;margin-bottom:12px}
+.rotation-card{display:none;flex-direction:column;gap:6px;padding:10px 14px}
 .rotation-card:not(.hidden){display:flex}
-.rotation-block{flex:1 1 0;min-width:0;padding:16px 18px;display:flex;flex-direction:column;gap:9px}
-.rotation-now{background:linear-gradient(160deg,var(--signal-tint),var(--surface) 75%)}
-.rotation-divider{width:1px;flex:0 0 1px;background:var(--line);margin:14px 0}
-.rotation-tag{display:inline-flex;align-items:center;gap:6px;width:max-content;font:800 10.5px/1 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--signal-ink)}
-.rotation-tag-next{color:var(--muted)}
-.rotation-dot{width:7px;height:7px;border-radius:50%;background:var(--signal);animation:rotationPulse 2.4s ease-in-out infinite}
-@keyframes rotationPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,106,61,.38)}50%{box-shadow:0 0 0 6px rgba(255,106,61,0)}}
-.rotation-main{display:flex;align-items:center;gap:12px}
-.rotation-code{flex:0 0 auto;min-width:52px;height:52px;display:grid;place-items:center;border-radius:14px;font:700 21px/1 var(--font-display)}
-.rotation-copy{min-width:0}
-.rotation-copy strong{display:block;font:700 15px/1.25 var(--font-body);color:var(--ink)}
-.rotation-copy small{display:block;margin-top:2px;font:600 11.5px/1.3 var(--font-body);color:var(--muted)}
-.rotation-names{font:500 13px/1.55 var(--font-body);color:var(--ink-soft)}
-.rotation-name:not(:last-child)::after{content:" · "}
+.rotation-row{display:flex;flex-wrap:wrap;align-items:center;gap:7px;font-size:12px}
+.rotation-row-next{padding-top:6px;border-top:1px solid var(--line)}
+.rotation-tag{flex:0 0 auto;min-width:58px;display:inline-flex;align-items:center;gap:5px;font:700 9.5px/1 var(--font-body);text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft)}
+.rotation-dot{width:6px;height:6px;flex:0 0 auto;border-radius:50%;background:var(--signal)}
+.rotation-row-next .rotation-tag{color:var(--muted)}
+.rotation-row-next .rotation-dot{background:var(--line-strong)}
+.rotation-chip{flex:0 0 auto;padding:2px 7px;border-radius:6px;font:800 10px/1.5 var(--font-body)}
+.rotation-desc{flex:0 0 auto;color:var(--ink-soft);font:600 11.5px/1.4 var(--font-body)}
+.rotation-names{color:var(--muted);font:500 11.5px/1.4 var(--font-body)}
 .rotation-empty{color:var(--muted);font-style:italic}
 
 /* ==========================================================
@@ -376,7 +372,8 @@ body.view-year .stats-grid{display:grid}
 /* ==========================================================
    Familles de codes de planning (partagées entre semaine / mois / année / légende / stats)
    ========================================================== */
-.code-R,.code-off{background:var(--c-off-bg);color:var(--c-off-ink)}
+.code-R{background:var(--c-r-bg);color:var(--c-r-ink)}
+.code-off{background:var(--c-off-bg);color:var(--c-off-ink)}
 .code-RM{background:var(--c-rm-bg);color:var(--c-rm-ink)}
 .code-RA{background:var(--c-ra-bg);color:var(--c-ra-ink)}
 .code-RN{background:var(--c-rn-bg);color:var(--c-rn-ink)}
@@ -443,11 +440,9 @@ body.view-year .stats-grid{display:grid}
   .today-btn{height:44px;padding:0 12px;font-size:11px}
   .employee-picker-button{min-height:44px}
 
-  .rotation-card:not(.hidden){flex-direction:column}
-  .rotation-divider{width:auto;height:1px;margin:0}
-  .rotation-block{padding:13px 14px}
-  .rotation-code{min-width:44px;height:44px;border-radius:12px;font-size:17px}
-  .rotation-copy strong{font-size:13px}
+  .rotation-card{padding:9px 12px}
+  .rotation-row{font-size:11px;gap:6px}
+  .rotation-tag{min-width:52px;font-size:9px}
 
   .upcoming-card{padding:10px}
   .upcoming-item{grid-template-columns:28px minmax(0,1fr) 32px;padding:8px 9px;gap:8px}
@@ -2201,28 +2196,19 @@ function renderRotationWidget(){
   const nowData=rotationBlockData(now);
   const nextData=rotationBlockData(next);
 
-  const namesHTML=names=>names.length
-    ? names.map(n=>`<span class="rotation-name">${escapeHTML(n)}</span>`).join('')
-    : '<span class="rotation-empty">Aucune personne assignée</span>';
+  const namesText=names=>names.length
+    ? escapeHTML(names.join(', '))
+    : '<span class="rotation-empty">aucune personne assignée</span>';
 
-  card.innerHTML=`
-    <div class="rotation-block rotation-now">
-      <div class="rotation-tag"><span class="rotation-dot"></span>En poste</div>
-      <div class="rotation-main">
-        <span class="rotation-code ${classFor(nowData.code)}">${escapeHTML(nowData.code)}</span>
-        <div class="rotation-copy"><strong>${escapeHTML(nowData.label)}</strong><small>${escapeHTML(nowData.time)}</small></div>
-      </div>
-      <div class="rotation-names">${namesHTML(nowData.names)}</div>
-    </div>
-    <div class="rotation-divider" aria-hidden="true"></div>
-    <div class="rotation-block rotation-next">
-      <div class="rotation-tag rotation-tag-next">Ensuite</div>
-      <div class="rotation-main">
-        <span class="rotation-code ${classFor(nextData.code)}">${escapeHTML(nextData.code)}</span>
-        <div class="rotation-copy"><strong>${escapeHTML(nextData.label)}</strong><small>${escapeHTML(nextData.time)}</small></div>
-      </div>
-      <div class="rotation-names">${namesHTML(nextData.names)}</div>
+  const row=(data,tag,rowClass)=>`
+    <div class="rotation-row ${rowClass}">
+      <span class="rotation-tag"><span class="rotation-dot"></span>${tag}</span>
+      <span class="rotation-chip ${classFor(data.code)}">${escapeHTML(data.code)}</span>
+      <span class="rotation-desc">${escapeHTML(data.label)} · ${escapeHTML(data.time)}</span>
+      <span class="rotation-names">${namesText(data.names)}</span>
     </div>`;
+
+  card.innerHTML=row(nowData,'En poste','rotation-row-now') + row(nextData,'Ensuite','rotation-row-next');
 
   card.classList.remove('hidden');
 }
