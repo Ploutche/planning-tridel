@@ -180,19 +180,24 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{
 .employee-results-empty{padding:16px 8px;text-align:center;color:var(--muted);font-size:11px}
 
 /* ==========================================================
-   Rotation en cours / suivante — repère discret
+   Rotation en cours / suivante — carte compacte
    ========================================================== */
-.rotation-card{display:none;flex-direction:column;gap:6px;padding:10px 14px}
+.rotation-card{display:none;padding:0;overflow:hidden;margin-bottom:10px}
 .rotation-card:not(.hidden){display:flex}
-.rotation-row{display:flex;flex-wrap:wrap;align-items:center;gap:7px;font-size:12px}
-.rotation-row-next{padding-top:6px;border-top:1px solid var(--line)}
-.rotation-tag{flex:0 0 auto;min-width:58px;display:inline-flex;align-items:center;gap:5px;font:700 9.5px/1 var(--font-body);text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft)}
-.rotation-dot{width:6px;height:6px;flex:0 0 auto;border-radius:50%;background:var(--signal)}
-.rotation-row-next .rotation-tag{color:var(--muted)}
-.rotation-row-next .rotation-dot{background:var(--line-strong)}
-.rotation-chip{flex:0 0 auto;padding:2px 7px;border-radius:6px;font:800 10px/1.5 var(--font-body)}
-.rotation-desc{flex:0 0 auto;color:var(--ink-soft);font:600 11.5px/1.4 var(--font-body)}
-.rotation-names{color:var(--muted);font:500 11.5px/1.4 var(--font-body)}
+.rotation-block{flex:1 1 0;min-width:0;padding:10px 12px;display:flex;flex-direction:column;gap:5px}
+.rotation-now{background:linear-gradient(160deg,var(--signal-tint),var(--surface) 75%)}
+.rotation-divider{width:1px;flex:0 0 1px;background:var(--line);margin:10px 0}
+.rotation-tag{display:inline-flex;align-items:center;gap:5px;width:max-content;font:800 9px/1 var(--font-body);letter-spacing:.06em;text-transform:uppercase;color:var(--signal-ink)}
+.rotation-tag-next{color:var(--muted)}
+.rotation-dot{width:6px;height:6px;border-radius:50%;background:var(--signal);animation:rotationPulse 2.4s ease-in-out infinite}
+@keyframes rotationPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,106,61,.38)}50%{box-shadow:0 0 0 5px rgba(255,106,61,0)}}
+.rotation-main{display:flex;align-items:center;gap:8px}
+.rotation-code{flex:0 0 auto;min-width:36px;height:36px;display:grid;place-items:center;border-radius:10px;font:700 14px/1 var(--font-display)}
+.rotation-copy{min-width:0}
+.rotation-copy strong{display:block;font:700 12.5px/1.25 var(--font-body);color:var(--ink)}
+.rotation-copy small{display:block;margin-top:1px;font:600 10px/1.3 var(--font-body);color:var(--muted)}
+.rotation-names{font:500 11px/1.45 var(--font-body);color:var(--ink-soft)}
+.rotation-name:not(:last-child)::after{content:" · "}
 .rotation-empty{color:var(--muted);font-style:italic}
 
 /* ==========================================================
@@ -440,9 +445,11 @@ body.view-year .stats-grid{display:grid}
   .today-btn{height:44px;padding:0 12px;font-size:11px}
   .employee-picker-button{min-height:44px}
 
-  .rotation-card{padding:9px 12px}
-  .rotation-row{font-size:11px;gap:6px}
-  .rotation-tag{min-width:52px;font-size:9px}
+  .rotation-card:not(.hidden){flex-direction:column}
+  .rotation-divider{width:auto;height:1px;margin:0}
+  .rotation-block{padding:9px 11px}
+  .rotation-code{min-width:32px;height:32px;border-radius:9px;font-size:13px}
+  .rotation-copy strong{font-size:12px}
 
   .upcoming-card{padding:10px}
   .upcoming-item{grid-template-columns:28px minmax(0,1fr) 32px;padding:8px 9px;gap:8px}
@@ -2196,19 +2203,28 @@ function renderRotationWidget(){
   const nowData=rotationBlockData(now);
   const nextData=rotationBlockData(next);
 
-  const namesText=names=>names.length
-    ? escapeHTML(names.join(', '))
-    : '<span class="rotation-empty">aucune personne assignée</span>';
+  const namesHTML=names=>names.length
+    ? names.map(n=>`<span class="rotation-name">${escapeHTML(n)}</span>`).join('')
+    : '<span class="rotation-empty">Aucune personne assignée</span>';
 
-  const row=(data,tag,rowClass)=>`
-    <div class="rotation-row ${rowClass}">
-      <span class="rotation-tag"><span class="rotation-dot"></span>${tag}</span>
-      <span class="rotation-chip ${classFor(data.code)}">${escapeHTML(data.code)}</span>
-      <span class="rotation-desc">${escapeHTML(data.label)} · ${escapeHTML(data.time)}</span>
-      <span class="rotation-names">${namesText(data.names)}</span>
+  card.innerHTML=`
+    <div class="rotation-block rotation-now">
+      <div class="rotation-tag"><span class="rotation-dot"></span>En poste</div>
+      <div class="rotation-main">
+        <span class="rotation-code ${classFor(nowData.code)}">${escapeHTML(nowData.code)}</span>
+        <div class="rotation-copy"><strong>${escapeHTML(nowData.label)}</strong><small>${escapeHTML(nowData.time)}</small></div>
+      </div>
+      <div class="rotation-names">${namesHTML(nowData.names)}</div>
+    </div>
+    <div class="rotation-divider" aria-hidden="true"></div>
+    <div class="rotation-block rotation-next">
+      <div class="rotation-tag rotation-tag-next">Ensuite</div>
+      <div class="rotation-main">
+        <span class="rotation-code ${classFor(nextData.code)}">${escapeHTML(nextData.code)}</span>
+        <div class="rotation-copy"><strong>${escapeHTML(nextData.label)}</strong><small>${escapeHTML(nextData.time)}</small></div>
+      </div>
+      <div class="rotation-names">${namesHTML(nextData.names)}</div>
     </div>`;
-
-  card.innerHTML=row(nowData,'En poste','rotation-row-now') + row(nextData,'Ensuite','rotation-row-next');
 
   card.classList.remove('hidden');
 }
