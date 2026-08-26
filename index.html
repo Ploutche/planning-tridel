@@ -261,7 +261,6 @@ html[data-theme="dark"] .theme-icon-light{display:block}
 .rotation-item-next .rotation-tag{color:var(--ink-soft)}
 .rotation-item-next .rotation-dot{background:var(--line-strong)}
 .rotation-chip{flex:0 0 auto;padding:1px 6px;border-radius:5px;font:800 9.5px/1.5 var(--font-body)}
-.rotation-label{flex:0 0 auto;font:600 10.5px/1.4 var(--font-body);color:var(--ink-soft)}
 .rotation-names{min-width:0;font:500 10.5px/1.4 var(--font-body);color:var(--muted)}
 .rotation-empty{font-style:italic}
 .rotation-sep{width:1px;align-self:stretch;flex:0 0 auto;background:var(--rotation-sep);margin:1px 0}
@@ -316,6 +315,15 @@ html[data-theme="dark"] .theme-icon-light{display:block}
 .period-center{text-align:center;min-width:0;position:relative}
 .period-center strong{display:block;font:700 15.5px/1.2 var(--font-display);color:var(--ink)}
 .period-center small{display:block;color:var(--muted);font:500 11.5px/1.3 var(--font-body);margin-top:2px}
+.period-jump-wrap{position:relative;display:none;width:max-content;margin:7px auto 0}
+.period-jump-wrap:not(.hidden){display:block}
+.period-jump{
+  appearance:none;-webkit-appearance:none;-moz-appearance:none;
+  border:0;background:var(--accent-tint);color:var(--accent-ink);
+  padding:5px 24px 5px 11px;border-radius:999px;font:700 10.5px/1 var(--font-body);
+  max-width:220px;cursor:pointer;
+}
+.period-jump-chevron{position:absolute;right:9px;top:50%;transform:translateY(-50%);color:var(--accent-ink);pointer-events:none}
 
 .panel-top{display:none}
 .stats-grid{display:none;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:7px;margin:0 0 10px}
@@ -367,6 +375,7 @@ body.view-year .stats-grid{display:grid}
 .month-cell.today .day-num{color:var(--accent-ink);font-weight:800}
 .month-code{align-self:flex-start;padding:4px 6px;border-radius:7px;font:800 10px/1 var(--font-body)}
 .empty-cell{align-self:center;color:var(--empty-ink);font-size:10px}
+.month-cell.is-holiday::before{content:'';position:absolute;top:6px;right:6px;width:6px;height:6px;border-radius:50%;background:var(--danger)}
 
 /* ==========================================================
    Vue Année
@@ -381,6 +390,8 @@ body.view-year .stats-grid{display:grid}
 .mini-empty{background:var(--paper);color:var(--empty-ink);cursor:default}
 .mini-cell.has-comment{position:relative}
 .mini-cell.has-comment::after{content:'';position:absolute;right:4px;bottom:4px;width:4px;height:4px;border-radius:50%;background:currentColor;opacity:.7}
+.mini-cell.is-holiday{position:relative}
+.mini-cell.is-holiday::before{content:'';position:absolute;left:3px;top:3px;width:4px;height:4px;border-radius:50%;background:var(--danger)}
 
 /* ==========================================================
    Légende
@@ -415,11 +426,12 @@ body.view-year .stats-grid{display:grid}
 .day-modal{width:min(430px,100%);max-height:min(680px,calc(100vh - 36px));overflow:auto;background:var(--surface);border-radius:18px;box-shadow:var(--shadow-modal);animation:modalPop .16s var(--ease)}
 @keyframes modalPop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
 .day-modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:17px 18px 13px;border-bottom:1px solid var(--line)}
-.day-modal-title{margin:0;font:700 16px/1.3 var(--font-display);color:var(--ink)}
+.day-modal-title{margin:0;font:700 16px/1.3 var(--font-body);color:var(--ink)}
 .day-modal-date{margin-top:4px;color:var(--muted);font-size:11px;text-transform:capitalize}
 .day-modal-close{width:34px;height:34px;border:1px solid var(--line);background:var(--surface);border-radius:var(--radius-sm);font-size:18px;color:var(--ink-soft);transition:background-color .12s var(--ease)}
 .day-modal-close:hover{background:var(--paper)}
 .day-modal-body{padding:15px 18px 18px}
+.day-detail-holiday{margin-bottom:10px;padding:8px 11px;border-radius:9px;background:var(--danger-bg);color:var(--danger);font:700 11px/1.4 var(--font-body)}
 .day-detail-service{border-radius:var(--radius-md);padding:14px}
 .day-detail-top{display:flex;align-items:center;gap:11px}
 .day-detail-code{min-width:46px;height:46px;border-radius:11px;display:grid;place-items:center;font:800 15px/1 var(--font-display);background:var(--tint-overlay)}
@@ -726,6 +738,10 @@ body.view-year .stats-grid{display:grid}
         <div class="period-center">
           <strong id="periodTitle"></strong>
           <small id="periodSubtitle"></small>
+          <div id="periodJumpWrap" class="period-jump-wrap hidden">
+            <select id="periodJump" class="period-jump" aria-label="Aller à une période précise"></select>
+            <svg class="period-jump-chevron" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
         </div>
         <button id="nextBtn" class="nav-btn" type="button" aria-label="Période suivante"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg></button>
       </div>
@@ -769,6 +785,7 @@ body.view-year .stats-grid{display:grid}
 const DATA_FILE='planning.json';
 const DAY_NAMES=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 const MONTH_NAMES=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const MONTH_SHORT=['jan','fév','mars','avr','mai','juin','juil','août','sept','oct','nov','déc'];
 const CODE_INFO={
   R:['Réserve','Selon besoin'],RM:['Rotation matin','05:00–13:00'],RA:['Rotation après-midi','13:00–21:00'],RN:['Rotation nuit','21:00–05:00'],
   VA:['Vacances','Absence planifiée'],VJ:['Vacances','Absence planifiée'],HOR:['Récupération d\'heure optionnel','Absence planifiée'],
@@ -795,6 +812,62 @@ const OFFICIAL_CODES=new Set(LEGEND_ORDER);
 const AUTHENTICATED_EMAIL_KEY='planningTridelAuthenticatedEmail';
 
 const ABSENCE_CODES=['VA','VJ','FE','HOR','HSR','PC','PI','EM','MI','AN','AP','PR','MS','MC'];
+
+/* ==========================================================
+   Jours fériés officiels (Vaud) — calculés pour n'importe quelle année
+   ========================================================== */
+function easterSunday(year){
+  const a=year%19, b=Math.floor(year/100), c=year%100;
+  const d=Math.floor(b/4), e=b%4;
+  const f=Math.floor((b+8)/25);
+  const g=Math.floor((b-f+1)/3);
+  const h=(19*a+b-d-g+15)%30;
+  const i=Math.floor(c/4), k=c%4;
+  const l=(32+2*e+2*i-h-k)%7;
+  const m=Math.floor((a+11*h+22*l)/451);
+  const month=Math.floor((h+l-7*m+114)/31);
+  const day=((h+l-7*m+114)%31)+1;
+  return new Date(year,month-1,day);
+}
+
+function federalFastMonday(year){
+  // Lundi qui suit le 3e dimanche de septembre.
+  const sep1=new Date(year,8,1);
+  const firstSunday=1+((7-sep1.getDay())%7);
+  return new Date(year,8,firstSunday+14+1);
+}
+
+function addDays(date,n){ const d=new Date(date); d.setDate(d.getDate()+n); return d; }
+
+const SWISS_HOLIDAYS_CACHE={};
+
+function swissHolidaysForYear(year){
+  if(SWISS_HOLIDAYS_CACHE[year]) return SWISS_HOLIDAYS_CACHE[year];
+
+  const easter=easterSunday(year);
+  const list=[
+    ["Jour de l'an", new Date(year,0,1)],
+    ['2 janvier', new Date(year,0,2)],
+    ['Vendredi Saint', addDays(easter,-2)],
+    ['Lundi de Pâques', addDays(easter,1)],
+    ["Jeudi de l'Ascension", addDays(easter,39)],
+    ["Vendredi de l'Ascension", addDays(easter,40)],
+    ['Lundi de Pentecôte', addDays(easter,50)],
+    ['Fête nationale', new Date(year,7,1)],
+    ['Lundi du Jeûne fédéral', federalFastMonday(year)],
+    ['Noël', new Date(year,11,25)]
+  ];
+
+  const map={};
+  list.forEach(([name,date])=>{ map[isoDate(date)]=name; });
+  SWISS_HOLIDAYS_CACHE[year]=map;
+  return map;
+}
+
+function swissHolidayName(dISO){
+  const year=Number(dISO.slice(0,4));
+  return swissHolidaysForYear(year)[dISO]||null;
+}
 
 function codeMatchesFilter(code){return true;}
 
@@ -1973,6 +2046,7 @@ function openDayModal(dateObj,employee=selectedEmployee()){
   const detailText=comment||info[1];
   const mates=ROTATION_CODES.includes(code)?colleaguesFor(dISO,code,employee.id):[];
   const icon=rotationIconSVG(code);
+  const holidayName=swissHolidayName(dISO);
 
   $('dayModalTitle').textContent=cleanEmployeeName(employee.name);
   $('dayModalDate').textContent=d.toLocaleDateString('fr-CH',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
@@ -1986,7 +2060,11 @@ function openDayModal(dateObj,employee=selectedEmployee()){
        </div>`
     : '';
 
-  $('dayModalBody').innerHTML=`<div class="day-detail-service ${classFor(code)}">
+  const holidayHTML=holidayName
+    ? `<div class="day-detail-holiday">🇨🇭 Jour férié — ${escapeHTML(holidayName)}</div>`
+    : '';
+
+  $('dayModalBody').innerHTML=`${holidayHTML}<div class="day-detail-service ${classFor(code)}">
     <div class="day-detail-top">
       <div class="day-detail-code">${escapeHTML(code||'—')}</div>
       <div class="day-detail-info"><strong>${icon}${escapeHTML(info[0])}</strong><small>${escapeHTML(detailText)}</small></div>
@@ -2292,7 +2370,6 @@ function renderRotationWidget(){
     <span class="rotation-item ${extraClass}">
       <span class="rotation-tag"><span class="rotation-dot"></span>${tag}</span>
       <span class="rotation-chip ${classFor(data.code)}">${escapeHTML(data.code)}</span>
-      <span class="rotation-label">${escapeHTML(data.label)}</span>
       <span class="rotation-names">${namesHTML(data.names)}</span>
     </span>`;
 
@@ -2304,11 +2381,58 @@ function renderRotationWidget(){
   card.classList.remove('hidden');
 }
 
+function mondaysOfYear(year){
+  const list=[];
+  let cursor=mondayOf(new Date(year,0,1));
+  const yearEnd=new Date(year,11,31);
+  while(cursor<=yearEnd){
+    list.push(new Date(cursor));
+    cursor=new Date(cursor);
+    cursor.setDate(cursor.getDate()+7);
+  }
+  return list;
+}
+
+function formatWeekOptionLabel(monday){
+  const end=new Date(monday);end.setDate(end.getDate()+6);
+  const sameMonth=monday.getMonth()===end.getMonth();
+  const range=sameMonth
+    ? `${monday.getDate()}–${end.getDate()} ${MONTH_SHORT[end.getMonth()]}`
+    : `${monday.getDate()} ${MONTH_SHORT[monday.getMonth()]} – ${end.getDate()} ${MONTH_SHORT[end.getMonth()]}`;
+  return `Sem. ${isoWeek(monday)} · ${range}`;
+}
+
+function populateWeekJump(){
+  const select=$('periodJump');
+  const year=mondayOf(state.date).getFullYear();
+  const mondays=mondaysOfYear(year);
+  select.innerHTML=mondays.map(mon=>
+    `<option value="${isoDate(mon)}">${formatWeekOptionLabel(mon)}</option>`
+  ).join('');
+  select.value=isoDate(mondayOf(state.date));
+  $('periodJumpWrap').classList.remove('hidden');
+}
+
+function populateMonthJump(){
+  const select=$('periodJump');
+  const year=state.date.getFullYear();
+  select.innerHTML=MONTH_NAMES.map((name,i)=>
+    `<option value="${year}-${String(i+1).padStart(2,'0')}-01">${name}</option>`
+  ).join('');
+  select.value=`${year}-${String(state.date.getMonth()+1).padStart(2,'0')}-01`;
+  $('periodJumpWrap').classList.remove('hidden');
+}
+
+function hidePeriodJump(){
+  $('periodJumpWrap').classList.add('hidden');
+}
+
 function renderWeek(e){
   const start=mondayOf(state.date),end=new Date(start);end.setDate(end.getDate()+6);
   $('viewOverline').textContent='';
   $('periodTitle').textContent=`Semaine ${isoWeek(start)}`;
   $('periodSubtitle').textContent=formatRange(start,end);
+  populateWeekJump();
   let h='<div class="week-board">';
   for(let i=0;i<7;i++){
     const d=new Date(start);d.setDate(start.getDate()+i);
@@ -2324,13 +2448,16 @@ function renderMonth(e){
   $('viewOverline').textContent='';
   $('periodTitle').textContent=`${MONTH_NAMES[m]} ${y}`;
   $('periodSubtitle').textContent='';
+  populateMonthJump();
   const first=new Date(y,m,1),start=mondayOf(first);
   let h='<div class="month-calendar"><div class="month-head">'+DAY_NAMES.map(d=>`<span>${d}</span>`).join('')+'</div><div class="month-grid">';
   for(let i=0;i<42;i++){
     const d=new Date(start);d.setDate(start.getDate()+i);
-    const c=safeCode(e.schedule[isoDate(d)]);
-    const isToday=isoDate(d)===todayISO();
-    const visible=codeMatchesFilter(c); h+=`<div class="month-cell ${d.getMonth()!==m?'outside':''} ${isToday?'today':''} ${visible?'':'filter-muted'}" data-date="${isoDate(d)}" tabindex="0" role="button"><span class="day-num">${d.getDate()}</span>${c&&visible?`<span class="month-code ${classFor(c)}">${escapeHTML(c)}</span>`:'<span class="empty-cell">—</span>'}</div>`;
+    const dISO=isoDate(d);
+    const c=safeCode(e.schedule[dISO]);
+    const isToday=dISO===todayISO();
+    const isHoliday=!!swissHolidayName(dISO);
+    const visible=codeMatchesFilter(c); h+=`<div class="month-cell ${d.getMonth()!==m?'outside':''} ${isToday?'today':''} ${isHoliday?'is-holiday':''} ${visible?'':'filter-muted'}" data-date="${dISO}" tabindex="0" role="button"><span class="day-num">${d.getDate()}</span>${c&&visible?`<span class="month-code ${classFor(c)}">${escapeHTML(c)}</span>`:'<span class="empty-cell">—</span>'}</div>`;
   }
   h+='</div></div>';$('viewContainer').innerHTML=h;
 }
@@ -2340,6 +2467,7 @@ function renderYear(e){
   $('viewOverline').textContent='';
   $('periodTitle').textContent=String(y);
   $('periodSubtitle').textContent='';
+  hidePeriodJump();
   let h='<div class="year-calendar">';
   for(let m=0;m<12;m++){
     const first=new Date(y,m,1),start=mondayOf(first);
@@ -2351,7 +2479,8 @@ function renderYear(e){
       const dISO=isoDate(d);
       const visible=codeMatchesFilter(c);
       const hasComment=d.getMonth()===m && !!commentFor(e,dISO);
-      h+=`<span class="mini-cell ${d.getMonth()!==m?'mini-empty':(visible?classFor(c):'mini-empty')} ${isToday?'today':''} ${hasComment?'has-comment':''}" data-date="${d.getMonth()===m?dISO:''}" ${d.getMonth()===m?'tabindex="0" role="button"':''}>${d.getMonth()===m?d.getDate():''}</span>`;
+      const isHoliday=d.getMonth()===m && !!swissHolidayName(dISO);
+      h+=`<span class="mini-cell ${d.getMonth()!==m?'mini-empty':(visible?classFor(c):'mini-empty')} ${isToday?'today':''} ${hasComment?'has-comment':''} ${isHoliday?'is-holiday':''}" data-date="${d.getMonth()===m?dISO:''}" ${d.getMonth()===m?'tabindex="0" role="button"':''}>${d.getMonth()===m?d.getDate():''}</span>`;
     }
     h+='</div></div>';
   }
@@ -2413,6 +2542,12 @@ document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{
 $('previousBtn').addEventListener('click',()=>shiftDate(-1));
 $('nextBtn').addEventListener('click',()=>shiftDate(1));
 $('todayBtn').addEventListener('click',goToday);
+
+$('periodJump').addEventListener('change',event=>{
+  const [y,m,d]=event.target.value.split('-').map(Number);
+  state.date=new Date(y,m-1,d);
+  render();
+});
 
 function toggleTheme(){
   const isDark=document.documentElement.getAttribute('data-theme')==='dark';
