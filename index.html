@@ -619,10 +619,10 @@ body.view-year .stats-grid{display:grid}
 
     <div id="firebaseAuthConfirm" class="hidden">
       <div class="firebase-auth-eyebrow">Vérification</div>
-      <h1>Confirme ton adresse</h1>
+      <h1>Confirme ta connexion</h1>
       <p>
-        Tu as ouvert le lien sur un autre navigateur ou appareil.
-        Entre l’adresse à laquelle le lien a été envoyé.
+        Pour éviter qu'un lien ne soit utilisé par erreur avant toi,
+        confirme ton adresse avant de continuer.
       </p>
 
       <label for="firebaseAuthConfirmEmail">Adresse e-mail</label>
@@ -2712,18 +2712,22 @@ async function handleIncomingEmailLink() {
   );
 
   // Priorité à l'adresse embarquée dans le lien, puis au stockage local.
-  // Le formulaire de confirmation ne sert plus que de secours pour les anciens liens.
   const signInEmail = isAllowedEmail(emailFromLink)
     ? emailFromLink
     : (isAllowedEmail(storedEmail) ? storedEmail : "");
 
-  if (signInEmail) {
-    await completeEmailLinkSignIn(signInEmail);
-    return true;
-  }
-
+  // On ne consomme JAMAIS le lien automatiquement : certains filtres de
+  // sécurité e-mail (Safe Links, Proofpoint, ...) visitent les liens reçus
+  // dès leur réception, ce qui invaliderait le lien avant même que la
+  // personne ne clique dessus. On affiche donc toujours une étape de
+  // confirmation manuelle ; l'adresse est pré-remplie si on la connaît déjà.
   showStep("confirm");
-  confirmEmailInput.focus();
+  confirmEmailInput.value = signInEmail;
+  if (signInEmail) {
+    confirmButton.focus();
+  } else {
+    confirmEmailInput.focus();
+  }
   return true;
 }
 
