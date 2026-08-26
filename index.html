@@ -35,7 +35,6 @@
   --tint-overlay:rgba(255,255,255,.6);
   --outside-bg:#FAFBFD;--empty-ink:#B7C0CE;
   --rotation-sep:#F4CFB8;
-  --avatar-bg:var(--accent-tint);--avatar-fg:var(--accent-ink);
 
   /* Familles de codes de planning — couleurs d'origine restaurées */
   --c-rm-bg:#E3E0FF;--c-rm-ink:#4545AA;
@@ -76,7 +75,6 @@ html[data-theme="dark"]{
   --tint-overlay:rgba(255,255,255,.14);
   --outside-bg:#0E1B2E;--empty-ink:#4E5F7D;
   --rotation-sep:#5C3A26;
-  --avatar-bg:var(--accent-tint);--avatar-fg:var(--accent-ink);
 
   --c-rm-bg:#241F42;--c-rm-ink:#B8AEFF;
   --c-ra-bg:#12283F;--c-ra-ink:#8FC4FF;
@@ -138,7 +136,7 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{
   mask-image:linear-gradient(115deg,rgba(0,0,0,.55),transparent 55%);
   -webkit-mask-image:linear-gradient(115deg,rgba(0,0,0,.55),transparent 55%);
 }
-.hero-inner{position:relative;display:flex;align-items:center;gap:13px}
+.hero-inner{position:relative;display:flex;align-items:center;flex-wrap:wrap;row-gap:8px;gap:13px}
 .logo{
   width:44px;height:44px;border-radius:13px;flex:0 0 auto;
   background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.16);
@@ -166,7 +164,7 @@ button:focus-visible,input:focus-visible,[tabindex]:focus-visible{
 html[data-theme="dark"] .theme-icon-dark{display:none}
 html[data-theme="dark"] .theme-icon-light{display:block}
 .firebase-auth-logout{
-  position:relative;
+  flex:0 0 auto;
   border:1px solid rgba(255,255,255,.28);border-radius:9px;
   padding:7px 10px;background:rgba(255,255,255,.08);color:#fff;
   font:700 10.5px/1 var(--font-body);
@@ -206,7 +204,7 @@ html[data-theme="dark"] .theme-icon-light{display:block}
 .employee-picker-main{display:flex;align-items:center;gap:10px;min-width:0}
 .employee-picker-avatar{
   width:32px;height:32px;flex:0 0 32px;border-radius:50%;
-  display:grid;place-items:center;background:var(--avatar-bg);color:var(--avatar-fg);
+  display:grid;place-items:center;background:var(--accent-tint);color:var(--accent-ink);
   font:800 10.5px/1 var(--font-body);
 }
 .employee-picker-copy{display:block;min-width:0}
@@ -241,10 +239,10 @@ html[data-theme="dark"] .theme-icon-light{display:block}
 .employee-result:hover,.employee-result.active{background:var(--accent-tint);color:var(--accent-ink)}
 .employee-result-avatar{
   width:28px;height:28px;flex:0 0 28px;border-radius:50%;
-  display:grid;place-items:center;background:var(--avatar-bg);color:var(--avatar-fg);
+  display:grid;place-items:center;background:var(--paper);color:var(--ink-soft);
   font:800 9px/1 var(--font-body);
 }
-.employee-result.active .employee-result-avatar{background:var(--surface);color:var(--avatar-fg)}
+.employee-result.active .employee-result-avatar{background:var(--surface);color:var(--accent-ink)}
 .employee-result-name{min-width:0;font:600 12.5px/1.3 var(--font-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .employee-results-empty{padding:16px 8px;text-align:center;color:var(--muted);font-size:11px}
 
@@ -254,18 +252,17 @@ html[data-theme="dark"] .theme-icon-light{display:block}
 .rotation-strip{
   display:none;align-items:center;flex-wrap:wrap;gap:5px 12px;
   margin-bottom:10px;padding:6px 12px;border-radius:10px;
-  background:var(--signal-tint);
+  background:linear-gradient(155deg,var(--signal-tint),var(--surface) 82%);
 }
 .rotation-strip:not(.hidden){display:flex}
-.rotation-item{display:inline-flex;align-items:center;gap:6px;min-width:0}
+.rotation-item{display:inline-flex;align-items:center;flex-wrap:wrap;gap:6px;min-width:0}
 .rotation-tag{display:inline-flex;align-items:center;gap:4px;flex:0 0 auto;font:800 8.5px/1 var(--font-body);letter-spacing:.04em;text-transform:uppercase;color:var(--signal-ink)}
 .rotation-dot{width:5px;height:5px;flex:0 0 auto;border-radius:50%;background:var(--signal)}
 .rotation-item-next .rotation-tag{color:var(--ink-soft)}
 .rotation-item-next .rotation-dot{background:var(--line-strong)}
 .rotation-chip{flex:0 0 auto;padding:1px 6px;border-radius:5px;font:800 9.5px/1.5 var(--font-body)}
 .rotation-label{flex:0 0 auto;font:600 10.5px/1.4 var(--font-body);color:var(--ink-soft)}
-.rotation-names{min-width:0;font:500 10.5px/1.4 var(--font-body);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rotation-item .shift-icon{flex:0 0 auto;color:var(--ink-soft)}
+.rotation-names{min-width:0;font:500 10.5px/1.4 var(--font-body);color:var(--muted)}
 .rotation-empty{font-style:italic}
 .rotation-sep{width:1px;align-self:stretch;flex:0 0 auto;background:var(--rotation-sep);margin:1px 0}
 
@@ -439,7 +436,7 @@ body.view-year .stats-grid{display:grid}
 .day-detail-team{margin-top:12px;padding-top:11px;border-top:1px solid rgba(16,31,54,.10)}
 .day-detail-team strong{display:block;color:var(--muted);font:800 9px/1 var(--font-body);text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}
 .day-detail-person{display:flex;align-items:center;gap:9px;padding:5px 0;font:700 11px/1.3 var(--font-body)}
-.day-detail-person-avatar{width:26px;height:26px;flex:0 0 26px;border-radius:50%;display:grid;place-items:center;background:var(--avatar-bg);color:var(--avatar-fg);font:800 8px/1 var(--font-body)}
+.day-detail-person-avatar{width:26px;height:26px;flex:0 0 26px;border-radius:50%;display:grid;place-items:center;background:var(--tint-overlay);font:800 8px/1 var(--font-body)}
 .day-detail-empty{color:var(--muted);font-size:11px}
 
 /* ==========================================================
@@ -509,6 +506,7 @@ body.view-year .stats-grid{display:grid}
   .update-chip{padding:6px 8px;max-width:150px;font-size:8.5px;border-radius:9px}
   .update-chip strong{font-size:9.5px}
   .theme-toggle{width:30px;height:30px;border-radius:9px}
+  .firebase-auth-logout{padding:6px 8px;font-size:9.5px}
 
   .controls{padding:9px;margin-bottom:9px}
   .today-btn{height:44px;padding:0 12px;font-size:11px}
@@ -516,7 +514,6 @@ body.view-year .stats-grid{display:grid}
 
   .rotation-strip{padding:6px 10px;gap:4px 9px}
   .rotation-sep{display:none}
-  .rotation-names{max-width:150px}
 
   .upcoming-card{padding:10px}
   .upcoming-item{grid-template-columns:28px minmax(0,1fr) 32px;padding:8px 9px;gap:8px}
@@ -674,10 +671,9 @@ body.view-year .stats-grid{display:grid}
         <svg class="theme-icon theme-icon-dark" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12.79A8 8 0 1 1 11.21 4a6.5 6.5 0 0 0 8.79 8.79Z"/></svg>
         <svg class="theme-icon theme-icon-light" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
       </button>
+      <button id="firebaseAuthLogout" class="firebase-auth-logout hidden" type="button">Déconnexion</button>
     </div>
-  
-<button id="firebaseAuthLogout" class="firebase-auth-logout hidden" type="button">Déconnexion</button>
-</header>
+  </header>
 
   <section id="rotationCard" class="rotation-strip hidden"></section>
 
@@ -898,31 +894,6 @@ function initials(name){
     .toUpperCase();
 }
 
-function colorForName(name){
-  const clean=cleanEmployeeName(name);
-  let hash=0;
-  for(let i=0;i<clean.length;i++){
-    hash=(hash*31 + clean.charCodeAt(i)) >>> 0;
-  }
-  const hue=hash % 360;
-  const dark=document.documentElement.getAttribute('data-theme')==='dark';
-  return {
-    bg:`hsl(${hue} 60% ${dark?20:91}%)`,
-    fg:`hsl(${hue} 55% ${dark?76:33}%)`
-  };
-}
-
-function paintAvatar(el,name){
-  if(!el)return;
-  const {bg,fg}=colorForName(name);
-  el.style.setProperty('--avatar-bg',bg);
-  el.style.setProperty('--avatar-fg',fg);
-}
-
-function avatarStyleAttr(name){
-  const {bg,fg}=colorForName(name);
-  return `--avatar-bg:${bg};--avatar-fg:${fg}`;
-}
 
 function isVacantEmployee(name){
   const clean=cleanEmployeeName(name).toLocaleLowerCase('fr');
@@ -1159,7 +1130,7 @@ function populateEmployees(filter=''){
 
   results.innerHTML=list.map(e=>`
     <button type="button" class="employee-result ${e.id===state.employeeId?'active':''}" data-employee-id="${escapeHTML(e.id)}">
-      <span class="employee-result-avatar" style="${avatarStyleAttr(e.name)}">${escapeHTML(initials(e.name))}</span>
+      <span class="employee-result-avatar">${escapeHTML(initials(e.name))}</span>
       <span class="employee-result-name">${escapeHTML(e.name)}</span>
     </button>
   `).join('');
@@ -1179,7 +1150,6 @@ function updateEmployeePicker(){
   const employee=selectedEmployee();
   $('employeePickerName').textContent=cleanEmployeeName(cleanEmployeeName(employee.name));
   $('employeePickerAvatar').textContent=initials(cleanEmployeeName(employee.name))||'—';
-  paintAvatar($('employeePickerAvatar'),employee.name);
   populateEmployees($('employeeSearch').value);
 }
 
@@ -2091,7 +2061,7 @@ function openDayModal(dateObj,employee=selectedEmployee()){
   const teamHTML=ROTATION_CODES.includes(code)
     ? `<div class="day-detail-team"><strong>Équipe</strong>
        ${mates.length?mates.map(name=>`<div class="day-detail-person">
-          <span class="day-detail-person-avatar" style="${avatarStyleAttr(name)}">${escapeHTML(initials(name))}</span>
+          <span class="day-detail-person-avatar">${escapeHTML(initials(name))}</span>
           <span>${escapeHTML(cleanEmployeeName(name))}</span>
         </div>`).join(''):'<div class="day-detail-empty">Aucun collègue trouvé</div>'}
        </div>`
@@ -2402,10 +2372,9 @@ function renderRotationWidget(){
   const item=(data,tag,extraClass)=>`
     <span class="rotation-item ${extraClass}">
       <span class="rotation-tag"><span class="rotation-dot"></span>${tag}</span>
-      ${rotationIconSVG(data.code)}
       <span class="rotation-chip ${classFor(data.code)}">${escapeHTML(data.code)}</span>
       <span class="rotation-label">${escapeHTML(data.label)}</span>
-      <span class="rotation-names" title="${escapeHTML(data.names.join(', '))}">${namesHTML(data.names)}</span>
+      <span class="rotation-names">${namesHTML(data.names)}</span>
     </span>`;
 
   card.innerHTML=
@@ -2537,17 +2506,6 @@ function toggleTheme(){
   const next=isDark?'light':'dark';
   document.documentElement.setAttribute('data-theme',next);
   try{ localStorage.setItem('planningTheme',next); }catch(e){}
-
-  // Les couleurs par personne dépendent du thème actif : on les rafraîchit.
-  if(planning.employees.length){
-    updateEmployeePicker();
-    if($('dayModalBackdrop').classList.contains('open')){
-      document.querySelectorAll('.day-detail-person-avatar').forEach(el=>{
-        const personName=el.nextElementSibling?.textContent||'';
-        paintAvatar(el,personName);
-      });
-    }
-  }
 }
 $('themeToggle').addEventListener('click',toggleTheme);
 
