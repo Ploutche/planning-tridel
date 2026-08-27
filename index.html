@@ -1569,6 +1569,11 @@ function buildUpcomingEvents(employee){
   const probeLimit=new Date(start);
   probeLimit.setDate(probeLimit.getDate()+400);
 
+  // Le "pont" ne doit relier que quelques jours de repos consécutifs
+  // (un week-end, par exemple) — pas des semaines entières de code R,
+  // sous peine de fusionner deux périodes totalement distinctes.
+  const MAX_BRIDGE_DAYS=3;
+
   const events=[];
   const seen=new Set();
   const comments=employee.comments||{};
@@ -1615,14 +1620,18 @@ function buildUpcomingEvents(employee){
         // Trouver le prochain jour non-repos
         if(isVacationBridgeCode(probeCode)){
           let bridgeEnd=new Date(probe);
+          let gapDays=0;
+          let exceededLimit=false;
 
           while(bridgeEnd<=probeLimit && isVacationBridgeCode(employee.schedule[isoDate(bridgeEnd)])){
             bridgeEnd.setDate(bridgeEnd.getDate()+1);
+            gapDays++;
+            if(gapDays>MAX_BRIDGE_DAYS){ exceededLimit=true; break; }
           }
 
-          // Si après les jours de repos les vacances reprennent,
+          // Si après quelques jours de repos seulement les vacances reprennent,
           // on considère que c'est une seule période.
-          if(bridgeEnd<=probeLimit && isVacationCode(safeCode(employee.schedule[isoDate(bridgeEnd)]))){
+          if(!exceededLimit && bridgeEnd<=probeLimit && isVacationCode(safeCode(employee.schedule[isoDate(bridgeEnd)]))){
             vacEnd=new Date(bridgeEnd);
             probe=new Date(bridgeEnd);
             probe.setDate(probe.getDate()+1);
@@ -1677,12 +1686,16 @@ function buildUpcomingEvents(employee){
 
         if(isVacationBridgeCode(probeCode)){
           let bridgeEnd=new Date(probe);
+          let gapDays=0;
+          let exceededLimit=false;
 
           while(bridgeEnd<=probeLimit && isVacationBridgeCode(employee.schedule[isoDate(bridgeEnd)])){
             bridgeEnd.setDate(bridgeEnd.getDate()+1);
+            gapDays++;
+            if(gapDays>MAX_BRIDGE_DAYS){ exceededLimit=true; break; }
           }
 
-          if(bridgeEnd<=probeLimit && safeCode(employee.schedule[isoDate(bridgeEnd)])==='PIQ'){
+          if(!exceededLimit && bridgeEnd<=probeLimit && safeCode(employee.schedule[isoDate(bridgeEnd)])==='PIQ'){
             piqEnd=new Date(bridgeEnd);
             probe=new Date(bridgeEnd);
             probe.setDate(probe.getDate()+1);
