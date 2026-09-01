@@ -323,7 +323,7 @@ html[data-theme="dark"] .theme-icon-light{display:block}
   padding:0 22px 0 2px;margin:0;
   font:700 15.5px/1.2 var(--font-display);
   text-align:center;text-align-last:center;
-  max-width:260px;cursor:pointer;border-radius:6px;
+  max-width:300px;cursor:pointer;border-radius:6px;
   transition:background-color .12s var(--ease);
 }
 .period-jump:hover{background:var(--paper)}
@@ -533,7 +533,7 @@ body.view-year .stats-grid{display:grid}
   .period-nav{grid-template-columns:38px 1fr 38px;margin-bottom:9px}
   .nav-btn{height:38px}
   .period-center strong{font-size:13.5px}
-  .period-jump{font-size:13.5px;max-width:200px}
+  .period-jump{font-size:13.5px;max-width:calc(100vw - 140px)}
 
   .week-board{display:block}
   .week-row{display:grid;grid-template-columns:70px 1fr;margin-bottom:6px;border-radius:12px}
@@ -1157,23 +1157,47 @@ function loadCachedPlanning(){
 }
 
 
+const EMPLOYEE_NAME_KEY='planningEmployeeName';
+
+function persistSelectedEmployee(employee){
+  try{
+    localStorage.setItem('planningEmployee',employee.id);
+    localStorage.setItem(EMPLOYEE_NAME_KEY,cleanEmployeeName(employee.name));
+  }catch(e){ /* stockage indisponible : tant pis, pas bloquant */ }
+}
+
 function initializeState(preferredId){
   state.date=new Date();
 
   const authenticatedEmail=localStorage.getItem(AUTHENTICATED_EMAIL_KEY);
   const matchedEmployee=bestEmployeeForEmail(authenticatedEmail);
 
-  state.employeeId=matchedEmployee
-    ? matchedEmployee.id
-    : planning.employees.some(e=>e.id===preferredId)
-      ? preferredId
-      : planning.employees.some(e=>e.id===localStorage.getItem('planningEmployee'))
-        ? localStorage.getItem('planningEmployee')
-        : planning.employees[0].id;
+  const storedName=localStorage.getItem(EMPLOYEE_NAME_KEY);
+  const byStoredName=storedName
+    ? planning.employees.find(e=>cleanEmployeeName(e.name)===storedName)
+    : null;
 
-  if(matchedEmployee){
-    localStorage.setItem('planningEmployee',matchedEmployee.id);
-  }
+  // Un identifiant (basé sur le numéro de ligne Excel) peut redevenir
+  // "valide" par coïncidence après une republication, tout en désignant
+  // maintenant une AUTRE personne. On ne lui fait confiance que s'il
+  // pointe vers le même nom que celui déjà mémorisé pour cette personne.
+  const idIfMatchesStoredName=id=>{
+    if(!id)return null;
+    const candidate=planning.employees.find(e=>e.id===id);
+    if(!candidate)return null;
+    if(storedName && cleanEmployeeName(candidate.name)!==storedName)return null;
+    return candidate;
+  };
+
+  const resolved=
+    matchedEmployee ||
+    idIfMatchesStoredName(preferredId) ||
+    idIfMatchesStoredName(localStorage.getItem('planningEmployee')) ||
+    byStoredName ||
+    planning.employees[0];
+
+  state.employeeId=resolved.id;
+  persistSelectedEmployee(resolved);
 }
 
 function populateEmployees(filter=''){
@@ -1205,7 +1229,7 @@ function populateEmployees(filter=''){
   results.querySelectorAll('.employee-result').forEach(button=>{
     button.addEventListener('click',()=>{
       state.employeeId=button.dataset.employeeId;
-      localStorage.setItem('planningEmployee',state.employeeId);
+      persistSelectedEmployee(selectedEmployee());
       updateEmployeePicker();
       closeEmployeePicker();
       render();
@@ -1292,7 +1316,7 @@ function normalizeEventText(value){
 }
 
 function parseClockToken(token){
-  const m=String(token||'').match(/\b([01]?\d|2[0-3])\s*(?:[:hH.]\s*([0-5]\d))?\b/);
+  const m=String(token||'').match(/\b([01]?\d|2[0-3])\s*(?:[:hH.](?:\s*([0-5]\d))?)?\b/);
   if(!m)return null;
   return {hour:Number(m[1]),minute:Number(m[2]||0)};
 }
@@ -1301,7 +1325,7 @@ function extractAppointmentTimes(text){
   const value=normalizeEventText(text);
 
   // Formats gérés : 8h, 8h30, 08:30, 08.30, 8h30-9h15, 08:30 à 09:15
-  const range=value.match(/\b([01]?\d|2[0-3])\s*(?:[:hH.]\s*([0-5]\d))?\s*(?:-|–|—|à|a)\s*([01]?\d|2[0-3])\s*(?:[:hH.]\s*([0-5]\d))?\b/i);
+  const range=value.match(/\b([01]?\d|2[0-3])\s*(?:[:hH.](?:\s*([0-5]\d))?)?\s*(?:-|–|—|à|a)\s*([01]?\d|2[0-3])\s*(?:[:hH.](?:\s*([0-5]\d))?)?\b/i);
   if(range){
     return {
       start:{hour:Number(range[1]),minute:Number(range[2]||0)},
@@ -1367,7 +1391,7 @@ function inferOrganizationFromEventText(text,location=''){
 
   value=value
     .replace(/\b(?:formation(?:\s+externe)?|visite\s+m[eé]dicale|m[eé]decin\s+du\s+travail|rdv|rendez[- ]?vous)\b/gi,' ')
-    .replace(/\b([01]?\d|2[0-3])\s*(?:[:hH.]\s*([0-5]\d))?\s*(?:-|–|—|à|a)\s*([01]?\d|2[0-3])\s*(?:[:hH.]\s*([0-5]\d))?\b/gi,' ')
+    .replace(/\b([01]?\d|2[0-3])\s*(?:[:hH.](?:\s*([0-5]\d))?)?\s*(?:-|–|—|à|a)\s*([01]?\d|2[0-3])\s*(?:[:hH.](?:\s*([0-5]\d))?)?\b/gi,' ')
     .replace(/\b(?:à\s*)?([01]?\d|2[0-3])\s*(?:[:hH.]\s*([0-5]\d)|[hH])\b/gi,' ')
     .replace(/\b(?:lieu|adresse)\s*[:\-]\s*.*/i,' ')
     .replace(/\s*[-–—,:;|]\s*/g,' ')
@@ -1441,7 +1465,7 @@ function stripDetectedTimeAndLocation(text, detectedLocation){
 
   // Supprime les heures/horaires du titre potentiel.
   value=value
-    .replace(/\b([01]?\d|2[0-3])\s*(?:[:hH.]\s*([0-5]\d))?\s*(?:-|–|—|à|a)\s*([01]?\d|2[0-3])\s*(?:[:hH.]\s*([0-5]\d))?\b/gi,' ')
+    .replace(/\b([01]?\d|2[0-3])\s*(?:[:hH.](?:\s*([0-5]\d))?)?\s*(?:-|–|—|à|a)\s*([01]?\d|2[0-3])\s*(?:[:hH.](?:\s*([0-5]\d))?)?\b/gi,' ')
     .replace(/\b(?:à\s*)?([01]?\d|2[0-3])\s*(?:[:hH.]\s*([0-5]\d))\b/gi,' ')
     .replace(/\b(?:à\s*)?([01]?\d|2[0-3])\s*[hH]\b/gi,' ');
 
@@ -2302,7 +2326,7 @@ function selectEmployeeFromAuthenticatedEmail(email){
   if(!employee)return false;
 
   state.employeeId=employee.id;
-  localStorage.setItem('planningEmployee',employee.id);
+  persistSelectedEmployee(employee);
 
   if($('employeePickerName')){
     updateEmployeePicker();
@@ -2675,7 +2699,7 @@ $('employeeSearch').addEventListener('input',event=>{
     const first=ranked[0].employee;
     if(first.id!==state.employeeId){
       state.employeeId=first.id;
-      localStorage.setItem('planningEmployee',state.employeeId);
+      persistSelectedEmployee(first);
       $('employeePickerName').textContent=first.name;
       $('employeePickerAvatar').textContent=initials(first.name)||'—';
       render();
