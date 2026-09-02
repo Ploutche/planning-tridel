@@ -1452,7 +1452,7 @@ function medicalEventFromComment(text,eventDate,employee){
     date:startDate,
     endDate:endDate,
     allDay:!times,
-    title:'Visite médicale Unisanté',
+    title:`Visite médicale Unisanté — ${formatLongDate(eventDate)}`,
     detail:info.join(' · ') || 'Visite médicale Unisanté',
     location,
     originalDetail:cleaned
@@ -1807,7 +1807,7 @@ function buildUpcomingEvents(employee){
         trainingEnd.setHours(times.end.hour,times.end.minute,0,0);
       }
 
-      const trainingTitle=inferGenericEventTitle(raw,'Formation');
+      const trainingTitle=`${inferGenericEventTitle(raw,'Formation')} — ${formatLongDate(eventDate)}`;
 
       pushUnique({
         type:'training',
