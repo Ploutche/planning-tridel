@@ -797,6 +797,7 @@ const CODE_INFO={
 };
 
 let planning={year:new Date().getFullYear(),employees:[],updatedAt:'',publicationId:'',schemaVersion:0,dateCount:0};
+let lastLoadedRawText='';
 let state={view:['week','month','year'].includes(localStorage.getItem('planningView'))?localStorage.getItem('planningView'):'week',employeeId:null,date:new Date()};
 const $=id=>document.getElementById(id);
 const pad=n=>String(n).padStart(2,'0');
@@ -1081,6 +1082,7 @@ async function loadPlanning(preserve=true){
 
     const raw=await response.json();
     const next=normalizeData(raw);
+    const rawText=JSON.stringify(raw);
 
     // Copie de secours pour un accès hors-ligne ultérieur (uniquement une fois validée).
     try{
@@ -1089,20 +1091,22 @@ async function loadPlanning(preserve=true){
 
     const previousId=state.employeeId;
 
-    // Si la publication est identique, on ne rerend pas toute l'interface.
-    // Cela évite de perturber l'utilisateur pendant qu'il navigue.
+    // On compare le CONTENU reçu, pas juste l'identifiant de publication :
+    // si l'identifiant ne changeait pas comme prévu pour une raison quelconque,
+    // une comparaison par identifiant laisserait l'appli bloquée indéfiniment
+    // sur une ancienne version malgré des republications réelles.
     const samePublication=
       preserve &&
       planning.employees?.length &&
-      next.publicationId &&
-      planning.publicationId===next.publicationId &&
-      planning.updatedAt===next.updatedAt;
+      rawText===lastLoadedRawText;
 
     if(samePublication){
       $('sourceStatus').textContent='';
       $('sourceStatus').classList.remove('status-warning');
       return;
     }
+
+    lastLoadedRawText=rawText;
 
     // On ne remplace la version affichée qu'après validation complète.
     planning=next;
