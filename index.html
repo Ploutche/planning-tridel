@@ -172,6 +172,15 @@ html[data-theme="dark"] .theme-icon-light{display:block}
 }
 .firebase-auth-logout:hover{background:rgba(255,255,255,.18)}
 
+.journal-access{
+  position:absolute;left:2px;bottom:-6px;
+  width:22px;height:22px;padding:0;border:0;background:transparent;
+  color:rgba(255,255,255,.16);
+  display:grid;place-items:center;cursor:pointer;
+}
+.journal-access:hover,.journal-access:focus-visible{color:rgba(255,255,255,.5)}
+.journal-access:focus-visible{outline:1px solid rgba(255,255,255,.4);outline-offset:1px;border-radius:50%}
+
 /* ==========================================================
    Cartes génériques + contrôles
    ========================================================== */
@@ -434,6 +443,19 @@ body.view-year .stats-grid{display:grid}
 .day-modal-close{width:34px;height:34px;border:1px solid var(--line);background:var(--surface);border-radius:var(--radius-sm);font-size:18px;color:var(--ink-soft);transition:background-color .12s var(--ease)}
 .day-modal-close:hover{background:var(--paper)}
 .day-modal-body{padding:15px 18px 18px}
+
+.journal-empty{color:var(--muted);font:600 12px/1.5 var(--font-body);text-align:center;padding:20px 0}
+.journal-entry{padding:10px 12px;border-radius:10px;background:var(--paper);border:1px solid var(--line);margin-bottom:8px}
+.journal-entry:last-child{margin-bottom:0}
+.journal-entry-head{display:flex;align-items:center;gap:7px;font:700 11.5px/1.3 var(--font-body)}
+.journal-dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto;background:var(--ok-ink)}
+.journal-warn .journal-dot{background:var(--warn-ink)}
+.journal-fail .journal-dot{background:var(--danger)}
+.journal-status{margin-left:auto;font:700 9.5px/1 var(--font-body);color:var(--ok-ink);background:var(--ok-bg);border-radius:6px;padding:3px 7px}
+.journal-warn .journal-status{color:var(--warn-ink);background:var(--warn-bg)}
+.journal-fail .journal-status{color:var(--danger);background:var(--danger-bg)}
+.journal-stats{margin-top:4px;color:var(--muted);font:600 10.5px/1.4 var(--font-body)}
+.journal-details{margin-top:6px;padding:7px 9px;border-radius:8px;background:var(--surface);font:600 10.5px/1.5 var(--font-body);color:var(--ink-soft);white-space:pre-wrap}
 .day-detail-holiday{margin-bottom:10px;padding:8px 11px;border-radius:9px;background:var(--danger-bg);color:var(--danger);font:700 11px/1.4 var(--font-body)}
 .day-detail-service{border-radius:var(--radius-md);padding:14px}
 .day-detail-top{display:flex;align-items:center;gap:11px}
@@ -679,6 +701,9 @@ body.view-year .stats-grid{display:grid}
         <svg class="theme-icon theme-icon-light" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
       </button>
       <button id="firebaseAuthLogout" class="firebase-auth-logout hidden" type="button">Déconnexion</button>
+      <button id="journalAccessBtn" class="journal-access" type="button" aria-label="Journal des publications">
+        <svg viewBox="0 0 24 24" width="8" height="8" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="12"/></svg>
+      </button>
     </div>
   </header>
 
@@ -782,6 +807,19 @@ body.view-year .stats-grid{display:grid}
   </div>
 </div>
 
+<div id="journalModalBackdrop" class="day-modal-backdrop" aria-hidden="true">
+  <div class="day-modal" role="dialog" aria-modal="true" aria-labelledby="journalModalTitle">
+    <div class="day-modal-head">
+      <div>
+        <h3 id="journalModalTitle" class="day-modal-title">Journal des publications</h3>
+        <div class="day-modal-date">Historique local à ce classeur, pas partagé avec l'équipe</div>
+      </div>
+      <button id="journalModalClose" class="day-modal-close" type="button">×</button>
+    </div>
+    <div id="journalModalBody" class="day-modal-body"></div>
+  </div>
+</div>
+
 <script>
 const DATA_FILE='planning.json';
 const DAY_NAMES=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
@@ -798,6 +836,7 @@ const CODE_INFO={
 
 let planning={year:new Date().getFullYear(),employees:[],updatedAt:'',publicationId:'',schemaVersion:0,dateCount:0};
 let lastLoadedRawText='';
+let lastJournal=[];
 let state={view:['week','month','year'].includes(localStorage.getItem('planningView'))?localStorage.getItem('planningView'):'week',employeeId:null,date:new Date()};
 const $=id=>document.getElementById(id);
 const pad=n=>String(n).padStart(2,'0');
@@ -1110,6 +1149,7 @@ async function loadPlanning(preserve=true){
 
     // On ne remplace la version affichée qu'après validation complète.
     planning=next;
+    lastJournal=Array.isArray(raw.journal)?raw.journal:[];
 
     initializeState(preserve ? previousId : null);
     populateEmployees();
@@ -2140,6 +2180,57 @@ function openDayModal(dateObj,employee=selectedEmployee()){
 function closeDayModal(){ $('dayModalBackdrop').classList.remove('open'); }
 $('dayModalClose').addEventListener('click',closeDayModal);
 $('dayModalBackdrop').addEventListener('click',e=>{ if(e.target===$('dayModalBackdrop'))closeDayModal(); });
+
+function formatJournalDate(horodatage){
+  const d=new Date(String(horodatage||'').replace(' ','T'));
+  if(isNaN(d))return String(horodatage||'—');
+  return d.toLocaleDateString('fr-CH',{day:'2-digit',month:'2-digit',year:'numeric'})+' à '+
+         d.toLocaleTimeString('fr-CH',{hour:'2-digit',minute:'2-digit'});
+}
+
+function journalStatusInfo(resultat){
+  if(resultat==='succes')return {label:'Réussi',cls:'ok'};
+  if(resultat==='avertissements')return {label:'Réussi (avertissements)',cls:'warn'};
+  if(resultat==='echec')return {label:'Échec',cls:'fail'};
+  return {label:resultat||'—',cls:'warn'};
+}
+
+function renderJournal(){
+  const body=$('journalModalBody');
+
+  if(!lastJournal.length){
+    body.innerHTML='<p class="journal-empty">Aucune publication enregistrée pour l\'instant.</p>';
+    return;
+  }
+
+  body.innerHTML=lastJournal.map(entree=>{
+    const statut=journalStatusInfo(entree.resultat);
+    const declencheur=entree.declencheur==='enregistrement' ? 'Automatique · enregistrement' : 'Bouton';
+    const details=String(entree.details||'').trim();
+
+    return `
+      <div class="journal-entry journal-${statut.cls}">
+        <div class="journal-entry-head">
+          <span class="journal-dot"></span>
+          <strong>${escapeHTML(formatJournalDate(entree.horodatage))}</strong>
+          <span class="journal-status">${escapeHTML(statut.label)}</span>
+        </div>
+        <div class="journal-stats">
+          ${escapeHTML(declencheur)} · ${Number(entree.employes)||0} employés · ${Number(entree.dates)||0} jours · ${Number(entree.masques)||0} masqué(s)
+        </div>
+        ${details ? `<div class="journal-details">${escapeHTML(details)}</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+function openJournalModal(){
+  renderJournal();
+  $('journalModalBackdrop').classList.add('open');
+}
+function closeJournalModal(){ $('journalModalBackdrop').classList.remove('open'); }
+$('journalAccessBtn').addEventListener('click',openJournalModal);
+$('journalModalClose').addEventListener('click',closeJournalModal);
+$('journalModalBackdrop').addEventListener('click',e=>{ if(e.target===$('journalModalBackdrop'))closeJournalModal(); });
 
 function attachDayClickHandlers(){
   document.querySelectorAll('[data-date]').forEach(el=>{
