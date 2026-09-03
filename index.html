@@ -383,6 +383,7 @@ body.view-year .stats-grid{display:grid}
 .month-cell:nth-child(7n){border-right:0}
 .outside{background:var(--outside-bg)}
 .day-num{font:600 10px/1 var(--font-body)}
+.month-code-label{align-self:flex-start;font:800 10px/1 var(--font-body)}
 .month-cell.outside .day-num{color:var(--muted)}
 .month-cell.today{box-shadow:inset 0 0 0 2px var(--accent)}
 .month-cell.today .day-num{color:var(--accent-ink);font-weight:800}
@@ -572,6 +573,7 @@ body.view-year .stats-grid{display:grid}
   .month-head span{padding:5px 0;font-size:8.5px}
   .month-cell{min-height:46px;padding:4px}
   .day-num{font-size:8.5px}
+  .month-code-label{font-size:8.5px}
 
   .year-calendar{grid-template-columns:1fr;gap:9px}
   .mini-month h3{padding:6px;font-size:12.5px}
@@ -819,7 +821,8 @@ body.view-year .stats-grid{display:grid}
 </div>
 
 <script>
-const DATA_FILE='planning.json';
+const DATA_FILE_PREFIX='planning-';
+const DATA_FILE_SUFFIX='.json';
 const DAY_NAMES=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 const MONTH_NAMES=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const MONTH_SHORT=['jan','fév','mars','avr','mai','juin','juil','août','sept','oct','nov','déc'];
@@ -1005,6 +1008,43 @@ function isVacantEmployee(name){
   return clean==='poste vacant' || clean==='poste-vacant' || clean==='vacant';
 }
 
+// Combine les employés de plusieurs fichiers (un par année) en une seule
+// liste, en fusionnant par nom -- les identifiants (basés sur le numéro de
+// ligne Excel) ne sont pas comparables d'un fichier à l'autre. Le planning
+// et les commentaires de chaque année s'ajoutent : les clés de date étant
+// propres à chaque année (yyyy-mm-dd), aucun risque de collision entre elles.
+function mergeEmployeesByName(perYearData){
+  const byName=new Map();
+
+  for(const data of perYearData){
+    for(const emp of data.employees){
+      const key=emp.name.toLocaleUpperCase('fr');
+      if(!byName.has(key)){
+        byName.set(key,{id:emp.id,name:emp.name,schedule:{},comments:{}});
+      }
+      const merged=byName.get(key);
+      Object.assign(merged.schedule,emp.schedule);
+      Object.assign(merged.comments,emp.comments);
+    }
+  }
+
+  return [...byName.values()].sort((a,b)=>a.name.localeCompare(b.name,'fr',{sensitivity:'base'}));
+}
+
+function combinePlannings(perYearData){
+  const employees=mergeEmployeesByName(perYearData);
+  const updatedAts=perYearData.map(d=>d.updatedAt).filter(Boolean).sort();
+
+  return {
+    year:new Date().getFullYear(),
+    updatedAt:updatedAts.length?updatedAts[updatedAts.length-1]:'',
+    publicationId:perYearData.map(d=>d.publicationId).filter(Boolean).join('+'),
+    schemaVersion:perYearData.length?Math.max(...perYearData.map(d=>d.schemaVersion)):0,
+    dateCount:perYearData.reduce((sum,d)=>sum+d.dateCount,0),
+    employees
+  };
+}
+
 function normalizeData(raw){
   if(!raw || typeof raw!=='object' || Array.isArray(raw)){
     throw new Error('planning.json ne contient pas un objet JSON valide.');
@@ -1108,30 +1148,50 @@ function normalizeData(raw){
 
 async function loadPlanning(preserve=true){
   try{
-    const response=await fetch(`${DATA_FILE}?v=${Date.now()}`,{
-      cache:'no-store',
-      headers:{'Accept':'application/json'}
-    });
+    const years=neededPublicationYears();
 
-    if(!response.ok){
-      throw new Error(`planning.json est introuvable (${response.status}).`);
+    // Une année sans fichier publié (ex. la suivante, pas encore commencée)
+    // est simplement ignorée -- pas une erreur, juste rien à ajouter d'elle.
+    const fetched=await Promise.all(years.map(async year=>{
+      try{
+        const response=await fetch(`${DATA_FILE_PREFIX}${year}${DATA_FILE_SUFFIX}?v=${Date.now()}`,{
+          cache:'no-store',
+          headers:{'Accept':'application/json'}
+        });
+        if(!response.ok)return null;
+        const raw=await response.json();
+        return {year,raw,data:normalizeData(raw)};
+      }catch(e){
+        return null;
+      }
+    }));
+
+    const valid=fetched.filter(Boolean).sort((a,b)=>a.year-b.year);
+    if(!valid.length){
+      throw new Error('Aucun planning publié trouvé.');
     }
 
-    const raw=await response.json();
-    const next=normalizeData(raw);
-    const rawText=JSON.stringify(raw);
+    const next=combinePlannings(valid.map(v=>v.data));
+    if(!next.employees.length){
+      throw new Error('Aucun employé visible n’a été publié.');
+    }
+
+    const rawText=JSON.stringify(valid.map(v=>v.raw));
 
     // Copie de secours pour un accès hors-ligne ultérieur (uniquement une fois validée).
     try{
-      localStorage.setItem('planningCache',JSON.stringify({raw,cachedAt:new Date().toISOString()}));
+      localStorage.setItem('planningCache',JSON.stringify({
+        raws:valid.map(v=>({year:v.year,raw:v.raw})),
+        cachedAt:new Date().toISOString()
+      }));
     }catch(e){ /* stockage indisponible : tant pis, pas bloquant */ }
 
     const previousId=state.employeeId;
 
-    // On compare le CONTENU reçu, pas juste l'identifiant de publication :
-    // si l'identifiant ne changeait pas comme prévu pour une raison quelconque,
-    // une comparaison par identifiant laisserait l'appli bloquée indéfiniment
-    // sur une ancienne version malgré des republications réelles.
+    // On compare le CONTENU reçu (tous les fichiers combinés), pas juste un
+    // identifiant : si celui-ci ne changeait pas comme prévu pour une raison
+    // quelconque, une comparaison par identifiant laisserait l'appli bloquée
+    // indéfiniment sur une ancienne version malgré des republications réelles.
     const samePublication=
       preserve &&
       planning.employees?.length &&
@@ -1147,7 +1207,10 @@ async function loadPlanning(preserve=true){
 
     // On ne remplace la version affichée qu'après validation complète.
     planning=next;
-    lastJournal=Array.isArray(raw.journal)?raw.journal:[];
+    lastJournal=valid
+      .flatMap(v=>(Array.isArray(v.raw.journal)?v.raw.journal:[]).map(entry=>({...entry,annee:v.year})))
+      .sort((a,b)=>String(b.horodatage||'').localeCompare(String(a.horodatage||'')))
+      .slice(0,30);
 
     initializeState(preserve ? previousId : null);
     populateEmployees();
@@ -1191,8 +1254,8 @@ function loadCachedPlanning(){
     const stored=localStorage.getItem('planningCache');
     if(!stored)return null;
     const parsed=JSON.parse(stored);
-    if(!parsed || !parsed.raw)return null;
-    return normalizeData(parsed.raw);
+    if(!parsed || !Array.isArray(parsed.raws) || !parsed.raws.length)return null;
+    return combinePlannings(parsed.raws.map(r=>normalizeData(r.raw)));
   }catch(e){
     return null;
   }
@@ -2116,6 +2179,16 @@ function navBounds(){
   return {min,max};
 }
 
+// Un fichier planning-<année>.json distinct par année : détermine lesquels
+// couvrent la vraie plage de navigation (mêmes bornes que navBounds), pour
+// ne jamais aller chercher plus de fichiers que nécessaire.
+function neededPublicationYears(){
+  const {min,max}=navBounds();
+  const years=new Set();
+  for(let y=min.getFullYear();y<=max.getFullYear();y++)years.add(y);
+  return [...years].sort((a,b)=>a-b);
+}
+
 function monthKey(date){ return date.getFullYear()*12+date.getMonth(); }
 
 function shiftDate(amount){
@@ -2214,7 +2287,7 @@ function renderJournal(){
           <span class="journal-status">${escapeHTML(statut.label)}</span>
         </div>
         <div class="journal-stats">
-          ${escapeHTML(declencheur)} · ${Number(entree.employes)||0} employés · ${Number(entree.dates)||0} jours · ${Number(entree.masques)||0} masqué(s)
+          ${entree.annee?`${escapeHTML(String(entree.annee))} · `:''}${escapeHTML(declencheur)} · ${Number(entree.employes)||0} employés · ${Number(entree.dates)||0} jours · ${Number(entree.masques)||0} masqué(s)
         </div>
         ${details ? `<div class="journal-details">${escapeHTML(details)}</div>` : ''}
       </div>`;
@@ -2611,7 +2684,8 @@ function renderMonth(e){
     const inMonth=d.getMonth()===m;
     const visible=codeMatchesFilter(c);
     const colorClass=(inMonth&&visible)?classFor(c):'outside';
-    h+=`<div class="month-cell ${colorClass} ${isToday?'today':''} ${isHoliday?'is-holiday':''}" data-date="${dISO}" tabindex="0" role="button"><span class="day-num">${d.getDate()}</span></div>`;
+    const showLabel=inMonth&&visible&&c;
+    h+=`<div class="month-cell ${colorClass} ${isToday?'today':''} ${isHoliday?'is-holiday':''}" data-date="${dISO}" tabindex="0" role="button"><span class="day-num">${d.getDate()}</span>${showLabel?`<span class="month-code-label">${escapeHTML(c)}</span>`:''}</div>`;
   }
   h+='</div></div>';$('viewContainer').innerHTML=h;
 }
